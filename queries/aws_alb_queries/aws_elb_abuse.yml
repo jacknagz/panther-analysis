@@ -1,0 +1,27 @@
+AnalysisType: scheduled_rule
+Filename: aws_elb_abuse_panther.py
+RuleID: "AWS.ALB.EndpointAbuse.Panther"
+DisplayName: "Endpoint abuse to the Panther Console endpoint"
+Description: >
+  Detects endpoint abuse by looking for a high number of requests to a single endpoint.
+Reports:
+  MITRE ATT&CK:
+    - TA0001:T1190
+Tags:
+  - RSS-PoC
+Enabled: true
+ScheduledQueries:
+  - "Query.AWS.ALB.EndpointAbuse"
+Severity: Medium
+Tests:
+  - Name: Abuse to web ELB
+    ExpectedResult: true
+    Log:
+      {
+        "clientIp": "3.145.213.57",
+        "elb": "app/web/dc4a02bad9c4ca52",
+        "error_count": 29,
+        "request_count": 36,
+        "unique_urls": 8,
+        "p_log_type": "AWS.ALB"
+      }

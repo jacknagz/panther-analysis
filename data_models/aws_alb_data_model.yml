@@ -11,3 +11,9 @@ Mappings:
     Path: clientIp
   - Name: user_agent
     Path: userAgent
+  - Name: source_port
+    Path: clientPort
+  - Name: destination_port
+    Path: targetPort
+  - Name: load_balancer_id
+    Path: elb

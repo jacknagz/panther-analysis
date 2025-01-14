@@ -1,0 +1,26 @@
+AnalysisType: scheduled_query
+QueryName: "Query.AWS.ALB.EndpointAbuse"
+Enabled: true
+Description: Detects endpoint abuse by looking for a high number of requests to a single endpoint.
+Schedule:
+  RateMinutes: 120
+  TimeoutMinutes: 1
+Query: |
+  SELECT 
+      clientIp,
+      elb,
+      p_log_type,
+      COUNT(*) as request_count,
+      COUNT(DISTINCT requestUrl) as unique_urls,
+      SUM(CASE WHEN elbStatusCode >= 400 THEN 1 ELSE 0 END) as error_count,
+      ANY_VALUE(userAgent) as sample_user_agent
+  FROM panther_logs.aws_alb
+  WHERE 
+      p_occurs_since('2h')
+  GROUP BY clientIp, elb, p_log_type
+  HAVING 
+      COUNT(*) > 10  -- High request volume
+      AND (COUNT(DISTINCT requestUrl) > 50  -- URL scanning
+          OR SUM(CASE WHEN elbStatusCode >= 400 THEN 1 ELSE 0 END)::float / COUNT(*) > 0.4)  -- High error rate
+  ORDER BY request_count DESC
+  LIMIT 100;
