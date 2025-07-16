@@ -1,0 +1,69 @@
+AnalysisType: rule
+RuleID: "Panther.APIToken.Updated"
+DisplayName: "A Panther API Token was Updated"
+Enabled: true
+LogTypes:
+  - Panther.Audit
+Severity: Medium
+Tags:
+  - Credential Access
+  - API Token
+Reports:
+  MITRE ATT&CK:
+    - TA0006:T1552
+Description: Detects when an API token is updated in Panther, which could indicate credential rotation or potential privilege escalation.
+Runbook: |
+  1. Confirm the user or automation that updated the API token.
+  2. Validate the reason for the update (routine rotation, incident response, etc).
+  3. If unauthorized, immediately revoke the token and investigate related activity.
+Reference: https://docs.panther.com/panther-developer-workflows/api
+Detection:
+  - KeyPath: actionName
+    Condition: IsIn
+    Values:
+      - UPDATE_API_TOKEN
+      - ROTATE_API_TOKEN
+  - KeyPath: actionResult
+    Condition: Equals
+    Value: SUCCEEDED
+GroupBy:
+  - KeyPath: actor.id
+DedupPeriodMinutes: 60
+Threshold: 1
+Tests:
+  - Name: API token updated (should alert)
+    ExpectedResult: true
+    Log:
+      actionName: UPDATE_API_TOKEN
+      actionResult: SUCCEEDED
+      actor:
+        id: "user-123"
+        name: "Jane Doe"
+        attributes:
+          email: "jane.doe@example.com"
+      p_log_type: Panther.Audit
+      timestamp: "2024-07-15T12:00:00Z"
+  - Name: API token update failed (should not alert)
+    ExpectedResult: false
+    Log:
+      actionName: UPDATE_API_TOKEN
+      actionResult: FAILED
+      actor:
+        id: "user-123"
+        name: "Jane Doe"
+        attributes:
+          email: "jane.doe@example.com"
+      p_log_type: Panther.Audit
+      timestamp: "2024-07-15T12:01:00Z"
+  - Name: Non-token update event (should not alert)
+    ExpectedResult: false
+    Log:
+      actionName: UPDATE_USER
+      actionResult: SUCCEEDED
+      actor:
+        id: "user-456"
+        name: "John Smith"
+        attributes:
+          email: "john.smith@example.com"
+      p_log_type: Panther.Audit
+      timestamp: "2024-07-15T12:02:00Z" 
