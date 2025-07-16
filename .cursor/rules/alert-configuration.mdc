@@ -1,0 +1,18 @@
+---
+alwaysApply: true
+---
+
+When writing rules, follow the guidance below for severity and deduplication:
+
+**Severity Levels:**
+- **CRITICAL**: Immediate response (data breach, privilege escalation)
+- **HIGH**: Urgent investigation (suspicious activity, policy violations)
+- **MEDIUM**: Standard investigation (unusual behavior, compliance)
+- **LOW/INFO**: Informational or signals only
+
+**Deduplication Windows:**
+- **15 min**: High-frequency events (login failures, API calls)
+- **60 min**: Standard security events (privilege changes, data access)
+- **180 min**: Compliance events
+- **720 min**: Low-frequency events (account creation)
+- **1440 min**: Rare events (root account usage)

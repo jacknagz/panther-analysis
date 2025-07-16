@@ -3,7 +3,7 @@ description:
 globs: 
 alwaysApply: false
 ---
-Create Panther security detection rules to identify suspicious behaviors or compliance violations.
+Create Panther detection rules to identify suspicious behaviors or compliance violations.
 
 # System Context
 1. Panther detections contain two files: a `.py` file for detection logic and a `.yml` file for metadata.
@@ -57,22 +57,7 @@ The YML file follows the rule schema definition. For complete field specificatio
 - Use appropriate deduplication to prevent alert flooding
 - Include comprehensive runbooks for effective triage
 
-## Alert Configuration
-
-**Severity Levels:**
-- **CRITICAL**: Immediate response (data breach, privilege escalation)
-- **HIGH**: Urgent investigation (suspicious activity, policy violations)
-- **MEDIUM**: Standard investigation (unusual behavior, compliance)
-- **LOW/INFO**: Informational or signals only
-
-**Deduplication Windows:**
-- **15 min**: High-frequency events (login failures, API calls)
-- **60 min**: Standard security events (privilege changes, data access)
-- **180 min**: Compliance events
-- **720 min**: Low-frequency events (account creation)
-- **1440 min**: Rare events (root account usage)
-
-**Anti-patterns to Avoid:**
+## Anti-Patterns (avoid these)
 - Don't implement thresholding in rule logic (Panther handles this)
 - Don't make titles too unique (causes alert fragmentation)
 - Don't access fields without safe methods (causes KeyError exceptions)
