@@ -3,6 +3,11 @@ Description: Detects AWS API key creation for a user by another user. Backdoored
 DisplayName: "AWS User API Key Created"
 Enabled: true
 Filename: aws_iam_user_key_created.py
+DedupPeriodMinutes: 60
+LogTypes:
+  - AWS.CloudTrail
+RuleID: "AWS.IAM.Backdoor.User.Keys"
+Threshold: 1
 Reports:
   MITRE ATT&CK:
     - TA0003:T1098
@@ -210,9 +215,3 @@ Tests:
             "userName": "some_iam_user",
           },
       }
-
-DedupPeriodMinutes: 60
-LogTypes:
-  - AWS.CloudTrail
-RuleID: "AWS.IAM.Backdoor.User.Keys"
-Threshold: 1

@@ -1,8 +1,8 @@
-from panther_aws_helpers import aws_rule_context
+from panther_aws_helpers import aws_cloudtrail_success, aws_rule_context
 
 
 def rule(event):
-    if event.get("eventName") != "BatchGetSecretValue":
+    if event.get("eventName") != "BatchGetSecretValue" and not aws_cloudtrail_success(event):
         return False
 
     filters = event.deep_get("requestParameters", "filters", default=[])

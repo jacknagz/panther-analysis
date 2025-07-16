@@ -9,7 +9,6 @@ LogTypes:
 Tags:
   - AWS
   - Identity & Access Management
-  - DemoThreatHunting
   - Privilege Escalation:Valid Accounts
 Reports:
   CIS:

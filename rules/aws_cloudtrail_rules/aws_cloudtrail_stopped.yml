@@ -8,7 +8,6 @@ LogTypes:
 Tags:
   - AWS
   - Security Control
-  - DemoThreatHunting
   - Defense Evasion:Impair Defenses
 Reports:
   CIS:

@@ -9,8 +9,9 @@ WITHIN_TIMEFRAME_MINUTES = 10
 
 
 def rule(event):
-    if event.get("eventName") != "BatchGetSecretValue":
+    if event.get("eventName") != "BatchGetSecretValue" and not aws_cloudtrail_success(event):
         return False
+
     user = event.udm("actor_user")
     key = f"{RULE_ID}-{user}"
     unique_regions = add_to_string_set(key, event.get("awsRegion"), WITHIN_TIMEFRAME_MINUTES * 60)

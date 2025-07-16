@@ -7,11 +7,7 @@ DedupPeriodMinutes: 15
 LogTypes:
   - AWS.CloudTrail
 Tags:
-  - AWS
-  - Identity & Access Management
-  - Authentication
-  - DemoThreatHunting
-  - Privilege Escalation:Valid Accounts
+  - Credential Access
 Reports:
   CIS:
     - 3.6

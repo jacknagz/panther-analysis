@@ -1,17 +1,12 @@
-from panther_aws_helpers import aws_rule_context
+from panther_aws_helpers import aws_cloudtrail_success, aws_rule_context
 
 
 def rule(event):
-    if event.get("eventName") == "BatchGetSecretValue":
-        return True
-    return False
+    return event.get("eventName") == "BatchGetSecretValue" and aws_cloudtrail_success(event)
 
 
 def title(event):
-    user = event.udm("actor_user")
-    return (
-        f"[{user}] attempted to batch retrieve a large number of secrets from AWS Secrets Manager"
-    )
+    return f"[{event.udm('actor_user')}] attempted to batch retrieve a large number of secrets from AWS Secrets Manager"
 
 
 def alert_context(event):

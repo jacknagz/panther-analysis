@@ -7,11 +7,7 @@ DedupPeriodMinutes: 15
 LogTypes:
   - AWS.CloudTrail
 Tags:
-  - AWS
-  - Identity & Access Management
-  - Authentication
-  - DemoThreatHunting
-  - Credential Access:Brute Force
+  - Credential Access
 Threshold: 5
 Reports:
   CIS:
