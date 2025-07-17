@@ -1,6 +1,6 @@
 import json
 
-from panther_aws_helpers import aws_rule_context
+from panther_aws_helpers import aws_cloudtrail_success, aws_rule_context
 from panther_detection_helpers.caching import add_to_string_set
 
 RULE_ID = "AWS.SecretsManager.RetrieveSecretsMultiRegion"
@@ -9,7 +9,10 @@ WITHIN_TIMEFRAME_MINUTES = 10
 
 
 def rule(event):
-    if event.get("eventName") != "BatchGetSecretValue" and not aws_cloudtrail_success(event):
+    if event.get("eventName") != "BatchGetSecretValue":
+        return False
+
+    if not aws_cloudtrail_success(event):
         return False
 
     user = event.udm("actor_user")

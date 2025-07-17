@@ -2,42 +2,147 @@ from panther_aws_helpers import aws_cloudtrail_success, aws_rule_context
 from panther_detection_helpers.caching import add_to_string_set
 
 RULE_ID = "AWS.SecretsManager.RetrieveSecrets"
-THRESHOLD = 7  # Lucky number 7 for unique secrets
-TIME_WINDOW_MINUTES = 60
+TIME_WINDOW_MINUTES = 10
+
+# Event-specific thresholds for unique secrets/actions
+EVENT_THRESHOLDS = {
+    "ListSecrets": 3,  # Broad reconnaissance
+    "DescribeSecret": 4,  # Targeted investigation
+    "GetSecretValue": 5,  # Secret exfiltration
+}
 
 
 def rule(event):
-    if event.get("eventName") != "GetSecretValue" and not aws_cloudtrail_success(event):
+    # Order conditions by selectivity - most restrictive first
+    event_name = event.get("eventName")
+    if event_name not in EVENT_THRESHOLDS:
         return False
 
-    user = event.deep_get("userIdentity", "arn")
-    secret_arn = event.deep_get("requestParameters", "secretId")
-    if not user or not secret_arn:
+    if not aws_cloudtrail_success(event):
         return False
 
-    cache_key = f"{RULE_ID}-{user}"
-    unique_secrets = add_to_string_set(
-        cache_key, secret_arn, event.event_time_epoch() + TIME_WINDOW_MINUTES * 60
+    user_arn = event.deep_get("userIdentity", "arn")
+    if not user_arn:
+        return False
+
+    return check_suspicious_activity(event, user_arn, event_name)
+
+
+def check_suspicious_activity(event, user_arn, event_name):
+    """Track unique secrets/actions by event type"""
+    threshold = EVENT_THRESHOLDS[event_name]
+
+    if event_name == "ListSecrets":
+        # Track list operations by timestamp (no specific secret)
+        cache_key = f"{RULE_ID}-list-{user_arn}"
+        activity = str(event.event_time_epoch())
+
+    elif event_name in ["DescribeSecret", "GetSecretValue"]:
+        # Track unique secrets being accessed
+        secret_id = event.deep_get("requestParameters", "secretId")
+        if not secret_id:
+            return False
+
+        cache_key = f"{RULE_ID}-{event_name.lower()}-{user_arn}"
+        activity = secret_id
+
+    else:
+        return False
+
+    # Add to cache with TTL
+    activities = add_to_string_set(
+        cache_key, activity, event.event_time_epoch() + TIME_WINDOW_MINUTES * 60
     )
-    if isinstance(unique_secrets, str):
+
+    # Handle string response from cache
+    if isinstance(activities, str):
         import json
 
-        unique_secrets = json.loads(unique_secrets)
-    elif not isinstance(unique_secrets, list):
-        unique_secrets = []
+        activities = json.loads(activities)
+    elif not isinstance(activities, list):
+        activities = []
 
-    return len(unique_secrets) >= THRESHOLD
+    return len(activities) >= threshold
 
 
 def title(event):
-    user = event.deep_get("userIdentity", "arn")
-    return (
-        f"[{user}] attempted to retrieve a large number of unique secrets from AWS Secrets Manager"
-    )
+    event_name = event.get("eventName")
+    activity_type = {
+        "ListSecrets": "reconnaissance",
+        "DescribeSecret": "targeted investigation",
+        "GetSecretValue": "secret retrieval",
+    }.get(event_name, "activity")
+
+    return f"Suspicious AWS Secrets Manager {activity_type} detected"
+
+
+def severity(event):
+    """Dynamic severity based on event type"""
+    event_name = event.get("eventName")
+    if event_name == "GetSecretValue":
+        return "HIGH"  # Actual secret exfiltration
+    elif event_name == "DescribeSecret":
+        return "MEDIUM"  # Targeted reconnaissance
+    else:  # ListSecrets
+        return "LOW"  # General reconnaissance
 
 
 def alert_context(event):
-    return aws_rule_context(event) | {
-        "errorCode": event.get("errorCode"),
-        "errorMessage": event.get("errorMessage"),
-    }
+    context = aws_rule_context(event)
+    user_arn = event.deep_get("userIdentity", "arn")
+    event_name = event.get("eventName")
+
+    # Add activity summary
+    context.update(
+        {
+            "event_type": event_name,
+            "threshold_used": EVENT_THRESHOLDS.get(event_name),
+            "time_window_minutes": TIME_WINDOW_MINUTES,
+            "activity_summary": get_activity_summary(user_arn),
+            "threat_indicators": analyze_attack_progression(user_arn),
+        }
+    )
+
+    return context
+
+
+def get_activity_summary(user_arn):
+    """Get summary of all recent activities for this user"""
+    from panther_detection_helpers.caching import get_string_set
+
+    summary = {}
+
+    for event_type in EVENT_THRESHOLDS.keys():
+        if event_type == "ListSecrets":
+            cache_key = f"{RULE_ID}-list-{user_arn}"
+        else:
+            cache_key = f"{RULE_ID}-{event_type.lower()}-{user_arn}"
+
+        activities = get_string_set(cache_key)
+        count = len(activities) if activities else 0
+        summary[f"{event_type.lower()}_count"] = count
+
+    return summary
+
+
+def analyze_attack_progression(user_arn):
+    """Analyze if this appears to be a multi-stage attack"""
+    summary = get_activity_summary(user_arn)
+
+    indicators = []
+
+    # Check for attack progression pattern
+    if summary.get("listsecrets_count", 0) > 0:
+        indicators.append("reconnaissance_phase")
+
+    if summary.get("describesecret_count", 0) > 0:
+        indicators.append("targeted_investigation")
+
+    if summary.get("getsecretvalue_count", 0) > 0:
+        indicators.append("secret_exfiltration")
+
+    # Multi-stage attack indicator
+    if len(indicators) > 1:
+        indicators.append("multi_stage_attack")
+
+    return indicators
