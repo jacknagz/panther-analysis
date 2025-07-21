@@ -140,7 +140,6 @@ pipenv run panther_analysis_tool zip --filter Severity=Critical
 
 pipenv run panther_analysis_tool upload [-h] [--path PATH] [--out OUT]
                                   [--filter KEY=VALUE [KEY=VALUE ...]]
-                                  [--debug]
                                   --api-key YOUR_PANTHER_API_KEY
                                   --api-token YOUR_PANTHER_API_HOST
 ```
