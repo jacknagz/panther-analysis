@@ -1,0 +1,95 @@
+AnalysisType: scheduled_rule
+Filename: aws_s3_large_download_specific_bucket.py
+RuleID: "AWS.S3.LargeDownloadSpecificBucket"
+DisplayName: "AWS S3 Large Download from Specific Bucket"
+Enabled: true
+ScheduledQueries:
+  - AWS S3 Large Download Specific Bucket
+Severity: Medium
+Tags:
+  - AWS
+  - S3
+  - Data Exfiltration
+  - CloudTrail
+Reports:
+  MITRE ATT&CK:
+    - "TA0010:T1537"  # Exfiltration: Transfer Data to Cloud Account
+Description: >
+  Detects when an IAM user downloads more than 100MB of data from the specific S3 bucket 
+  'jn-model-training-data-5233' within a 5-minute window. This may indicate unauthorized 
+  data exfiltration or bulk log downloads for analysis.
+DedupPeriodMinutes: 60
+Runbook: |
+  1. **Immediate Actions:**
+     - Verify if the user activity is authorized
+     - Check if the downloads were for legitimate business purposes
+     - Consider temporarily restricting bucket access if suspicious
+  
+  2. **Investigation Steps:**
+     - Review the user's recent authentication events
+     - Check for any privilege escalation or credential compromise
+     - Examine the downloaded objects to determine sensitivity
+     - Review source IP and user agent for signs of automation
+     - Check for other suspicious activities by the same user
+  
+  3. **Containment:**
+     - If unauthorized: revoke user credentials immediately
+     - Apply temporary S3 bucket policies to restrict access
+     - Enable S3 MFA delete and additional monitoring
+  
+  4. **Recovery:**
+     - Document the scope of data accessed
+     - Review S3 access logs for complete activity timeline
+     - Consider rotating any sensitive data that may have been accessed
+  
+  5. **Prevention:**
+     - Implement S3 access monitoring and alerting
+     - Review IAM policies for least privilege
+     - Consider S3 Access Points for controlled access
+     - Enable GuardDuty for enhanced threat detection
+
+Tests:
+  - Name: Large download triggers alert
+    ExpectedResult: true
+    Log:
+      user_arn: "arn:aws:iam::123456789012:user/data-engineer"
+      user_name: "data-engineer"
+      user_type: "IAMUser"
+      bucket_name: "jn-model-training-data-5233"
+      source_ip: "192.168.1.100"
+      user_agent: "aws-cli/2.0.0"
+      total_bytes_downloaded: 157286400  # 150MB
+      object_count: 75
+      first_download_time: "2025-01-15 14:30:00"
+      last_download_time: "2025-01-15 14:34:30"
+      sample_objects: ["logs/2025/01/15/file1.log", "logs/2025/01/15/file2.log"]
+
+  - Name: Critical threshold triggers high severity
+    ExpectedResult: true
+    Log:
+      user_arn: "arn:aws:iam::123456789012:user/suspicious-user" 
+      user_name: "suspicious-user"
+      user_type: "IAMUser"
+      bucket_name: "jn-model-training-data-5233"
+      source_ip: "10.0.0.1"
+      user_agent: "python-requests/2.28.0"
+      total_bytes_downloaded: 1073741824  # 1GB
+      object_count: 200
+      first_download_time: "2025-01-15 15:00:00"
+      last_download_time: "2025-01-15 15:04:59"
+      sample_objects: ["data/model1.bin", "data/model2.bin", "logs/training.log"]
+
+  - Name: Medium download triggers medium severity
+    ExpectedResult: true
+    Log:
+      user_arn: "arn:aws:iam::123456789012:user/analyst"
+      user_name: "analyst"
+      user_type: "IAMUser"
+      bucket_name: "jn-model-training-data-5233"
+      source_ip: "203.0.113.45"
+      user_agent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)"
+      total_bytes_downloaded: 209715200  # 200MB
+      object_count: 40
+      first_download_time: "2025-01-15 16:01:00"
+      last_download_time: "2025-01-15 16:03:15"
+      sample_objects: ["analytics/report1.json", "analytics/report2.json"]

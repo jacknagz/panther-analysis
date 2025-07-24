@@ -1,0 +1,42 @@
+AnalysisType: scheduled_query
+QueryName: "AWS S3 Large Download Specific Bucket"
+Enabled: true
+Description: >
+  Returns S3 GetObject events from bucket 'jn-model-training-data-5233' where an IAM user 
+  has downloaded more than 100MB of data in the last 5 minutes.
+Tags:
+  - AWS CloudTrail
+  - AWS S3
+  - Data Exfiltration
+Query: |-
+  SELECT 
+    userIdentity:arn as user_arn,
+    userIdentity:userName as user_name,
+    userIdentity:type as user_type,
+    requestParameters:bucketName as bucket_name,
+    sourceIPAddress as source_ip,
+    userAgent as user_agent,
+    SUM(additionalEventData:bytesTransferredOut::int) as total_bytes_downloaded,
+    COUNT(*) as object_count,
+    MIN(p_event_time) as first_download_time,
+    MAX(p_event_time) as last_download_time,
+    ARRAY_AGG(DISTINCT requestParameters:key) as sample_objects
+  FROM panther_logs.public.aws_cloudtrail
+  WHERE eventName = 'GetObject'
+    AND eventSource = 's3.amazonaws.com'
+    AND requestParameters:bucketName = 'jn-model-training-data-5233'
+    AND userIdentity:type = 'IAMUser'
+    AND errorCode IS NULL
+    AND p_occurs_since('5m', p_event_time)
+  GROUP BY 
+    userIdentity:arn,
+    userIdentity:userName, 
+    userIdentity:type,
+    requestParameters:bucketName,
+    sourceIPAddress,
+    userAgent
+  HAVING SUM(additionalEventData:bytesTransferredOut::int) >= 104857600
+  ORDER BY total_bytes_downloaded DESC
+Schedule:
+  RateMinutes: 5
+  TimeoutMinutes: 2

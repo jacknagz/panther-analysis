@@ -6,8 +6,8 @@ TIME_WINDOW_MINUTES = 10
 
 # Event-specific thresholds for unique secrets/actions
 EVENT_THRESHOLDS = {
-    "ListSecrets": 3,  # Broad reconnaissance
-    "DescribeSecret": 4,  # Targeted investigation
+    "ListSecrets": 2,  # Broad reconnaissance
+    "DescribeSecret": 3,  # Targeted investigation
     "GetSecretValue": 5,  # Secret exfiltration
 }
 
@@ -42,9 +42,10 @@ def check_suspicious_activity(event, user_arn, event_name):
     elif event_name in ["DescribeSecret", "GetSecretValue"]:
         # Track unique secrets being accessed
         secret_id = event.deep_get("requestParameters", "secretId")
+        region = event.deep_get("awsRegion")
         if not secret_id:
             return False
-        activity = secret_id
+        activity = f"{secret_id}-{region}"
 
     else:
         return False
