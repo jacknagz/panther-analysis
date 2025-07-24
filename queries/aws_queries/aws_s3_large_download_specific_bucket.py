@@ -42,14 +42,5 @@ def alert_context(event: PantherEvent) -> dict:
         "object_count": event.get("object_count"),
         "first_download_time": event.get("first_download_time"),
         "last_download_time": event.get("last_download_time"),
-        "sample_objects": event.get("sample_objects", [])[:10],  # Show first 10 objects
-        "threshold_mb": 50,
-        "detection_window_minutes": 10,
+        "sample_objects": event.get("sample_objects", [])[:10]  # Show first 10 objects
     }
-
-
-def dedup(event: PantherEvent) -> str:
-    """Dedupe by user ARN and bucket to avoid alert spam"""
-    user_arn = event.get("user_arn", "unknown")
-    bucket_name = event.get("bucket_name", "unknown")
-    return f"{user_arn}-{bucket_name}"

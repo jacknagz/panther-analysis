@@ -26,7 +26,7 @@ Query: |-
     AND eventSource = 's3.amazonaws.com'
     AND userIdentity:type IN ('IAMUser', 'AssumedRole', 'FederatedUser')
     AND errorCode IS NULL
-    AND p_event_time >= DATEADD(minute, -10, CURRENT_TIMESTAMP())
+    AND p_event_time >= DATEADD(minute, -15, CURRENT_TIMESTAMP())
     AND userIdentity:arn NOT LIKE '%panther-snowflake-api%'
     -- AND (requestParameters:bucketName LIKE '%sensitive%' OR requestParameters:bucketName LIKE '%prod%')
   GROUP BY 
@@ -39,5 +39,5 @@ Query: |-
   HAVING SUM(COALESCE(additionalEventData:bytesTransferredOut::int, 0)) >= 52428800  -- 50MB default
   ORDER BY total_bytes_downloaded DESC
 Schedule:
-  RateMinutes: 10
+  RateMinutes: 15
   TimeoutMinutes: 3
