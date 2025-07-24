@@ -1,4 +1,4 @@
-from panther_aws_helpers import aws_rule_context, lookup_aws_account_name
+from panther_aws_helpers import aws_rule_context
 from panther_core import PantherEvent
 
 
@@ -43,8 +43,8 @@ def alert_context(event: PantherEvent) -> dict:
         "first_download_time": event.get("first_download_time"),
         "last_download_time": event.get("last_download_time"),
         "sample_objects": event.get("sample_objects", [])[:10],  # Show first 10 objects
-        "threshold_mb": 100,
-        "detection_window_minutes": 5,
+        "threshold_mb": 50,
+        "detection_window_minutes": 10,
     }
 
 
