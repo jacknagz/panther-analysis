@@ -19,7 +19,7 @@ Tags:
   - risk.medium
 Description: >
   Detects when an API token is updated in Panther. This can help monitor changes to API tokens for auditing and security purposes.
-Runbook: >
+Runbook: |
   1. Review the user and context of the API token update.
   2. Confirm the update was expected and authorized.
   3. If unexpected, rotate the token and investigate further.
@@ -62,5 +62,3 @@ Tests:
         "timestamp": "2024-06-01T12:00:00Z",
         "p_log_type": "Panther.Audit"
       }
-OutputIds:
-  - "d4735112-507e-43a9-96a0-8c850e722c3b" 

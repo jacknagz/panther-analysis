@@ -19,7 +19,7 @@ Tags:
   - usecase.siem_integrity
   - asset.detection_controls
   - risk.medium
-Runbook: >
+Runbook: |
   1. Review the detection changes to ensure they were authorized
   2. Verify the changes align with change management procedures
   3. Document any unexpected changes and investigate if necessary
@@ -175,5 +175,3 @@ Tests:
         "timestamp": "2024-03-20T14:00:00Z",
         "pantherVersion": "1.44.0"
       }
-OutputIds:
-  - "d4735112-507e-43a9-96a0-8c850e722c3b" 
