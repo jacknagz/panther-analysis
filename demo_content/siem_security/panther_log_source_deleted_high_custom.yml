@@ -1,15 +1,15 @@
 AnalysisType: rule
-RuleID: "Panther.LogSource.Deleted.Demo"
+RuleID: "Panther.LogSource.Deleted.Custom"
 DisplayName: Log Source Deleted in Panther
 Enabled: true
-Filename: panther_log_source_deleted_high_demo.py
+Filename: panther_log_source_deleted_high_custom.py
 LogTypes:
   - Panther.Audit
 Severity: High
 Description: >
   Detects when a log source is deleted in Panther. Deletion of log sources can result in loss of visibility and may indicate malicious or unauthorized configuration changes.
 Tags:
-  - demo
+  - custom
   - compliance.change_management
   - mitre.ta0005.defense_evasion
   - mitre.t1562.impair_defenses

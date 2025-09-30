@@ -1,6 +1,6 @@
 AnalysisType: rule
 Enabled: true
-RuleID: "Panther.MultipleDetectionsDeletedHigh.Demo"
+RuleID: "Panther.MultipleDetectionsDeletedHigh.Custom"
 LogTypes:
   - Panther.Audit
 Severity: High
@@ -19,7 +19,7 @@ GroupBy:
 DedupPeriodMinutes: 60
 Threshold: 5
 Tags:
-  - demo
+  - custom
   - mitre.ta0005.defense_evasion
   - mitre.ta0040.impact
   - mitre.t1562.impair_defenses

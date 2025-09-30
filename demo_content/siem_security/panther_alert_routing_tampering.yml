@@ -14,7 +14,6 @@ Description: >
   an attempt to bypass critical security monitoring or reduce alert visibility.
 DedupPeriodMinutes: 60
 Tags:
-  - demo
   - mitre.ta0005.defense_evasion
   - mitre.t1562.impair_defenses
   - usecase.insider_threat_detection

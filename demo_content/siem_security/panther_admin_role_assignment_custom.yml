@@ -1,6 +1,6 @@
 AnalysisType: rule
 Enabled: true
-RuleID: Panther.AdminRole.Assignment.Demo
+RuleID: Panther.AdminRole.Assignment.Custom
 LogTypes:
   - Panther.Audit
 Severity: Low
@@ -24,7 +24,7 @@ Detection:
             Condition: Equals
             Value: 85fa5eb4-3fff-46c3-bc5a-84ec5c56286b
 Tags:
-  - demo
+  - custom
   - compliance.soc2
   - compliance.change_management
   - mitre.ta0003.persistence

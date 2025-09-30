@@ -14,7 +14,6 @@ Description: >
   used for defense evasion or compromise security monitoring capabilities when occurring in patterns.
 DedupPeriodMinutes: 15
 Tags:
-  - demo
   - mitre.ta0005.defense_evasion
   - mitre.t1562.impair_defenses
   - mitre.t1070.indicator_removal
@@ -51,7 +50,7 @@ Tests:
       actionParams:
         dynamic:
           input:
-            detectionId: AWS.CloudTrail.RootLogin.Demo
+            detectionId: AWS.CloudTrail.RootLogin
       sourceIP: "198.51.100.1"
       timestamp: "2025-08-29T14:30:00Z"
       userAgent: "Mozilla/5.0 (Macintosh; Intel Mac OS X)"
@@ -72,11 +71,11 @@ Tests:
           input:
             detections:
               - enabled: false
-                id: AWS.CloudTrail.Stopped.Demo
+                id: AWS.CloudTrail.Stopped
               - enabled: false
-                id: AWS.IAM.BackdoorRole.Demo
+                id: AWS.IAM.BackdoorRole
               - enabled: false
-                id: AWS.S3.MassExfiltration.Demo
+                id: AWS.S3.MassExfiltration
       sourceIP: "203.0.113.50"
       timestamp: "2025-08-29T02:15:00Z"
       userAgent: "curl/7.68.0"
