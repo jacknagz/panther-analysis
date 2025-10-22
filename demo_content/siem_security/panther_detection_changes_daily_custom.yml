@@ -1,7 +1,7 @@
 AnalysisType: rule
-Filename: panther_detection_changes_daily_demo.py
-RuleID: "Panther.Detection.Changes.Daily.Demo"
-DisplayName: "Daily Summary of Panther Detection Changes (Demo)"
+Filename: panther_detection_changes_daily_custom.py
+RuleID: "Panther.Detection.Changes.Daily.Custom"
+DisplayName: "Daily Summary of Panther Detection Changes"
 Enabled: true
 LogTypes:
   - Panther.Audit
@@ -14,7 +14,7 @@ Description: >
 DedupPeriodMinutes: 1440  # 24 hours
 Threshold: 1
 Tags:
-  - demo
+  - custom
   - compliance.change_management
   - usecase.siem_integrity
   - asset.detection_controls

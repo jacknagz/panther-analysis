@@ -1,6 +1,6 @@
 AnalysisType: rule
-Filename: panther_api_token_updated_demo.py
-RuleID: "Panther.APIToken.Updated.Demo"
+Filename: panther_api_token_updated_custom.py
+RuleID: "Panther.APIToken.Updated.Custom"
 DisplayName: Panther API Token Updated
 Enabled: true
 LogTypes:
@@ -12,7 +12,7 @@ InlineFilters:
     Condition: Equals
     Value: SUCCEEDED
 Tags:
-  - demo
+  - custom
   - compliance.soc2
   - usecase.configuration_management
   - asset.api_credentials

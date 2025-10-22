@@ -24,8 +24,9 @@ def title(event):
 
 def runbook(event):
     return f"""
-    Check if the key was used. Query the aws_cloudtrail table for events using the new access key ({event.deep_get("responseElements", "accessKey", "accessKeyId", default="key not found")}) starting from ({event.get("eventTime", "")}) and ~2 hours after. Look for privilege escalation or other techniques used by the attacker.
-    """
+1. Check if the new access key was used ({event.deep_get("responseElements", "accessKey", "accessKeyId", default="key not found")}) starting from ({event.get("eventTime", "")}) and ~2 hours after. Build a timeline and then get a column summary of eventName's.
+2. Check which IAM permissions this user has attached to gauge scope.
+"""
 
 
 def alert_context(event):

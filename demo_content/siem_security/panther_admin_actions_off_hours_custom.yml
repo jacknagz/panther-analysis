@@ -1,7 +1,7 @@
 AnalysisType: rule
 Enabled: true
-Filename: panther_admin_actions_off_hours.py
-RuleID: Demo.Panther.Admin.Actions.OffHours
+Filename: panther_admin_actions_off_hours_custom.py
+RuleID: Custom.Panther.Admin.Actions.OffHours
 LogTypes:
   - Panther.Audit
 Severity: Medium
@@ -12,7 +12,7 @@ Description: >
   performed during off-hours (10pm - 5am Pacific Time). Administrative activities during unusual 
   hours may indicate unauthorized access, insider threats, or compromised accounts.
 Tags:
-  - demo
+  - custom
   - compliance.soc2
   - compliance.change_management
   - mitre.ta0003.persistence

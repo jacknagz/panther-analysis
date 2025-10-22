@@ -1,5 +1,5 @@
 AnalysisType: rule
-RuleID: "Panther.User.Invited.WithoutSSO.Demo"
+RuleID: "Panther.User.Invited.WithoutSSO.Custom"
 DisplayName: User Invited to Panther Without SSO
 Enabled: true
 LogTypes:
@@ -20,7 +20,7 @@ SummaryAttributes:
   - sourceIP
   - timestamp 
 Tags:
-  - demo
+  - custom
   - compliance.soc2
   - compliance.change_management
   - compliance.nist_csf

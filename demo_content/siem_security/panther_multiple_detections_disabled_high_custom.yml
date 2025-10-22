@@ -1,6 +1,6 @@
 AnalysisType: rule
-Filename: panther_multiple_detections_disabled_high_demo.py
-RuleID: "Panther.MultipleDetectionsDisabledHigh.Demo"
+Filename: panther_multiple_detections_disabled_high_custom.py
+RuleID: "Panther.MultipleDetectionsDisabledHigh.Custom"
 LogTypes:
   - Panther.Audit
 Severity: High
@@ -15,7 +15,7 @@ Description: >
 DedupPeriodMinutes: 60
 Threshold: 2
 Tags:
-  - demo
+  - custom
   - mitre.ta0005.defense_evasion
   - mitre.t1562.impair_defenses
   - usecase.insider_threat_detection
@@ -55,11 +55,11 @@ Tests:
           input:
             detections:
               - enabled: false
-                id: AWS.CloudTrail.Stopped.Demo
+                id: AWS.CloudTrail.Stopped
               - enabled: false
-                id: AWS.IAM.BackdoorRole.Demo
+                id: AWS.IAM.BackdoorRole
               - enabled: false
-                id: AWS.S3.MassExfiltration.Demo
+                id: AWS.S3.MassExfiltration
       sourceIP: "198.51.100.123"
       timestamp: "2024-03-15T14:00:00Z"
   - Name: Single detection disabled (should not trigger aggregation by itself)
@@ -97,7 +97,7 @@ Tests:
           input:
             detections:
               - enabled: true
-                id: AWS.CloudTrail.Stopped.Demo
+                id: AWS.CloudTrail.Stopped
       sourceIP: "10.0.1.200"
       timestamp: "2024-03-15T16:00:00Z"
   - Name: Failed detection state update (should not alert)
@@ -115,6 +115,6 @@ Tests:
           input:
             detections:
               - enabled: false
-                id: AWS.CloudTrail.Stopped.Demo
+                id: AWS.CloudTrail.Stopped
       sourceIP: "10.0.1.300"
       timestamp: "2024-03-15T17:00:00Z"

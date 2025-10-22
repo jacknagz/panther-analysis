@@ -1,6 +1,6 @@
 AnalysisType: rule
 Enabled: true
-RuleID: "Panther.MultipleFailedActions.Demo"
+RuleID: "Panther.MultipleFailedActions.Custom"
 LogTypes:
   - Panther.Audit
 Severity: Low
@@ -21,7 +21,7 @@ GroupBy:
 Threshold: 10
 DedupPeriodMinutes: 60
 Tags:
-  - demo
+  - custom
   - compliance.soc2
   - mitre.ta0006.credential_access
   - mitre.t1110.brute_force

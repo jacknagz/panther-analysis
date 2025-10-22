@@ -14,7 +14,6 @@ Description: >
   an attempt to bypass critical security monitoring or reduce alert visibility.
 DedupPeriodMinutes: 60
 Tags:
-  - demo
   - mitre.ta0005.defense_evasion
   - mitre.t1562.impair_defenses
   - usecase.insider_threat_detection
@@ -32,11 +31,9 @@ Reports:
     - TA0005:T1562  # Defense Evasion: Impair Defenses
 Reference: https://docs.panther.com/system-configuration/destinations
 Runbook: |
-  1. Query panther_audit logs for other administrative actions by the same actor to identify coordinated tampering
-  2. Use list_alerts to check if any MEDIUM, HIGH, or CRITICAL alerts were generated after this routing change
-  3. Query alert destination configurations to verify critical/high severity alert routing
-  4. Search data lake for any missed high-severity alerts that should have been routed
-  5. Check alert history for patterns of destination tampering by the same actor
+  1. Pivot on the IP to identify more information about the actor
+  2. sql query panther_audit logs for other administrative actions by the same actor around this time frame
+  3. Check if any MEDIUM, HIGH, or CRITICAL alerts were generated after this routing change, indicating undeliverable alerts
 Tests:
   - Name: Alert destination set to only INFO severity
     ExpectedResult: true

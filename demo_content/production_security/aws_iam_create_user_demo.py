@@ -31,12 +31,11 @@ def title(event):
 
 def runbook(event):
     return f"""
-    Identify who created the IAM user ({event.get("requestParameters", {}).get("userName", "")}). 
-    
-    Check for suspicious follow-up activities, like admin policy attachments or access key creation within 1 hour of ({event.get("eventTime", "")}) in the aws_cloudtrail table.
-
-    If unauthorized, immediately disable the user and investigate any actions taken using CloudTrail logs.
-    """
+We do not allow IAM users to be created. Instead, we use IAM roles for access. Follow these steps to assess the alert:
+1. Check for suspicious follow-up activities like admin IAM policy attachments or access key creation within 1 hour of ({event.get("eventTime", "")}) in the aws_cloudtrail table.
+2. Check if the user still exists by querying the aws_cloudtrail table.
+3. Check if this actor has a history of creating IAM users.
+"""
 
 
 def alert_context(event):
