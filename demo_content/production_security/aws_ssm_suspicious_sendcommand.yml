@@ -1,0 +1,302 @@
+AnalysisType: rule
+Enabled: true
+RuleID: AWS.SSM.SuspiciousSendCommand.Demo
+LogTypes:
+  - AWS.CloudTrail
+Severity: Medium
+CreateAlert: true
+DisplayName: AWS SSM SendCommand on Single Instance (Demo)
+Description: |
+  Detects SSM SendCommand using AWS-RunShellScript on a single EC2 instance. While this is commonly used for legitimate system administration, it's also a technique used by attackers to execute commands on EC2 instances, including stealing instance credentials from the metadata service (IMDS).
+  
+  This detection focuses on single-instance commands which are more suspicious than bulk operations, as attackers typically target individual instances rather than performing fleet-wide management.
+Detection:
+  - KeyPath: eventName
+    Condition: Equals
+    Value: SendCommand
+  - KeyPath: eventSource
+    Condition: Equals
+    Value: ssm.amazonaws.com
+  - KeyPath: requestParameters.documentName
+    Condition: Equals
+    Value: AWS-RunShellScript
+  - KeyPath: errorCode
+    Condition: IsNull
+  # Single instance targeting (more suspicious than bulk operations)
+  - KeyPath: requestParameters.instanceIds
+    Condition: AnyElement
+    Expressions:
+      - Condition: AlwaysTrue
+  # Ensure we're looking at single-instance commands (length check via threshold on event)
+DynamicSeverities:
+  - Conditions:
+      # Legitimate automation/service accounts might use this - reduce severity
+      - Any:
+          - KeyPath: userIdentity.principalId
+            Condition: IStartsWith
+            Value: AIDAI  # AWS service principal
+          - KeyPath: userAgent
+            Condition: IsIn
+            Values:
+              - aws-systems-manager
+              - ssm-agent
+              - AWSSystemsManager
+    ChangeTo: Info
+  - Conditions:
+      # Multiple instances = bulk operation = less suspicious
+      - KeyPath: responseElements.command.targetCount
+        Condition: IsGreaterThan
+        Value: 1
+    ChangeTo: Low
+Tags:
+  - AWS
+  - SSM
+  - EC2
+  - Credential Access
+  - MITRE ATT&CK
+Reports:
+  MITRE ATT&CK:
+    - TA0006:T1552.005  # Credential Access: Cloud Instance Metadata API
+Reference: https://stratus-red-team.cloud/attack-techniques/AWS/aws.credential-access.ec2-steal-instance-credentials/
+AlertTitle: "SSM SendCommand on single instance [{requestParameters.instanceIds[0]}] by [{userIdentity.arn}]"
+Runbook: |
+  ## Investigation Steps
+  
+  1. **Verify Command Legitimacy**
+     - Identify the user/role that executed the command
+     - Check if this is expected behavior from this identity
+     - Review the timing - was this during business hours or maintenance windows?
+  
+  2. **Check for Instance Credential Theft**
+     Run this query to look for API calls from the instance role shortly after the SendCommand:
+     ```sql
+     SELECT 
+       p_event_time,
+       eventName,
+       eventSource,
+       userIdentity:arn as actor,
+       sourceIPAddress,
+       userAgent
+     FROM panther_logs.public.aws_cloudtrail
+     WHERE p_event_time BETWEEN '<sendcommand_time>' AND '<sendcommand_time + 10 minutes>'
+       AND userIdentity:sessionContext:sessionIssuer:arn LIKE '%<instance-role-name>%'
+       AND userIdentity:type = 'AssumedRole'
+     ORDER BY p_event_time
+     ```
+  
+  3. **Look for Suspicious API Activity from Instance Role**
+     - Check for API calls from IPs that don't match the EC2 instance's IP
+     - Look for unusual API calls (sts:GetCallerIdentity, ec2:DescribeInstances from external IPs)
+     - Investigate if instance credentials are being used outside AWS
+  
+  4. **Review SSM Command Output**
+     - Use AWS Console or CLI to retrieve the command output:
+       ```bash
+       aws ssm get-command-invocation \
+         --command-id <commandId> \
+         --instance-id <instanceId>
+       ```
+     - Look for signs of metadata service queries (169.254.169.254)
+  
+  5. **Check for IMDSv1 vs IMDSv2**
+     - Verify if the instance is configured to require IMDSv2
+     - IMDSv1 is more vulnerable to SSRF and credential theft attacks
+  
+  ## Potential False Positives
+  
+  - **System administrators**: Routine use of SSM for troubleshooting, log collection, or script execution
+  - **Automation tools**: CI/CD pipelines, configuration management, or monitoring tools
+  - **AWS services**: Some AWS services use SSM internally for operations
+  
+  ## Mitigation
+  
+  If credential theft is confirmed:
+  1. Immediately revoke the instance profile session
+  2. Rotate the instance role credentials
+  3. Enable IMDSv2 requirement on all EC2 instances
+  4. Review CloudTrail for all API calls made with stolen credentials
+  5. Consider implementing SCPs to restrict sensitive operations from EC2 instance roles
+SummaryAttributes:
+  - userIdentity.arn
+  - sourceIPAddress
+  - requestParameters.instanceIds
+  - requestParameters.documentName
+  - responseElements.command.commandId
+GroupBy:
+  - KeyPath: responseElements.command.commandId
+DedupPeriodMinutes: 60
+Threshold: 1
+Tests:
+  - Name: SSM SendCommand on Single Instance - MEDIUM Severity
+    ExpectedResult: true
+    Log:
+      eventVersion: "1.08"
+      eventName: SendCommand
+      eventSource: ssm.amazonaws.com
+      eventTime: "2024-08-02T08:23:24Z"
+      eventType: AwsApiCall
+      awsRegion: us-east-1
+      requestParameters:
+        documentName: AWS-RunShellScript
+        instanceIds:
+          - i-1234567890abcdef0
+        interactive: false
+        parameters: HIDDEN_DUE_TO_SECURITY_REASONS
+      responseElements:
+        command:
+          commandId: f6887251-cdde-4251-a026-f50a25f521f7
+          documentName: AWS-RunShellScript
+          targetCount: 1
+          instanceIds:
+            - i-1234567890abcdef0
+          status: Pending
+      sourceIPAddress: 203.0.113.42
+      userAgent: aws-cli/2.1.34
+      userIdentity:
+        type: IAMUser
+        principalId: AIDAUSER123456789
+        arn: arn:aws:iam::123456789012:user/alice
+        accountId: "123456789012"
+        userName: alice
+      recipientAccountId: "123456789012"
+  
+  - Name: SSM SendCommand on Multiple Instances - LOW Severity
+    ExpectedResult: true  # Should alert but with LOW severity
+    Log:
+      eventVersion: "1.08"
+      eventName: SendCommand
+      eventSource: ssm.amazonaws.com
+      eventTime: "2024-08-02T08:23:24Z"
+      eventType: AwsApiCall
+      awsRegion: us-east-1
+      requestParameters:
+        documentName: AWS-RunShellScript
+        instanceIds:
+          - i-1111111111111111
+          - i-2222222222222222
+          - i-3333333333333333
+        interactive: false
+        parameters: HIDDEN_DUE_TO_SECURITY_REASONS
+      responseElements:
+        command:
+          commandId: abc12345-cdde-4251-a026-f50a25f521f7
+          documentName: AWS-RunShellScript
+          targetCount: 3
+          instanceIds:
+            - i-1111111111111111
+            - i-2222222222222222
+            - i-3333333333333333
+          status: Pending
+      sourceIPAddress: 203.0.113.42
+      userAgent: aws-cli/2.1.34
+      userIdentity:
+        type: IAMUser
+        principalId: AIDAUSER789012345
+        arn: arn:aws:iam::123456789012:user/admin
+        accountId: "123456789012"
+        userName: admin
+      recipientAccountId: "123456789012"
+  
+  - Name: SSM SendCommand by AWS Service
+    ExpectedResult: true  # Should alert but with INFO severity
+    Log:
+      eventVersion: "1.08"
+      eventName: SendCommand
+      eventSource: ssm.amazonaws.com
+      eventTime: "2024-08-02T08:23:24Z"
+      eventType: AwsApiCall
+      awsRegion: us-east-1
+      requestParameters:
+        documentName: AWS-RunShellScript
+        instanceIds:
+          - i-service123456789
+        interactive: false
+        parameters: HIDDEN_DUE_TO_SECURITY_REASONS
+      responseElements:
+        command:
+          commandId: svc12345-cdde-4251-a026-f50a25f521f7
+          documentName: AWS-RunShellScript
+          targetCount: 1
+          instanceIds:
+            - i-service123456789
+          status: Pending
+      sourceIPAddress: aws-systems-manager.amazonaws.com
+      userAgent: AWSSystemsManager
+      userIdentity:
+        type: AssumedRole
+        principalId: AIDAIEXAMPLESERVICE
+        arn: arn:aws:sts::123456789012:assumed-role/AWSServiceRoleForAmazonSSM/session
+        accountId: "123456789012"
+      recipientAccountId: "123456789012"
+  
+  - Name: SSM SendCommand with Different Document (Should NOT Alert)
+    ExpectedResult: false
+    Log:
+      eventVersion: "1.08"
+      eventName: SendCommand
+      eventSource: ssm.amazonaws.com
+      eventTime: "2024-08-02T08:23:24Z"
+      eventType: AwsApiCall
+      awsRegion: us-east-1
+      requestParameters:
+        documentName: AWS-ConfigureAWSPackage
+        instanceIds:
+          - i-1234567890abcdef0
+      responseElements:
+        command:
+          commandId: pkg12345-cdde-4251-a026-f50a25f521f7
+          documentName: AWS-ConfigureAWSPackage
+          targetCount: 1
+      sourceIPAddress: 203.0.113.42
+      userAgent: aws-cli/2.1.34
+      userIdentity:
+        type: IAMUser
+        arn: arn:aws:iam::123456789012:user/admin
+        accountId: "123456789012"
+      recipientAccountId: "123456789012"
+  
+  - Name: Failed SSM SendCommand (Should NOT Alert)
+    ExpectedResult: false
+    Log:
+      eventVersion: "1.08"
+      eventName: SendCommand
+      eventSource: ssm.amazonaws.com
+      eventTime: "2024-08-02T08:23:24Z"
+      eventType: AwsApiCall
+      awsRegion: us-east-1
+      errorCode: AccessDenied
+      errorMessage: User is not authorized to perform ssm:SendCommand
+      requestParameters:
+        documentName: AWS-RunShellScript
+        instanceIds:
+          - i-1234567890abcdef0
+      sourceIPAddress: 203.0.113.42
+      userAgent: aws-cli/2.1.34
+      userIdentity:
+        type: IAMUser
+        arn: arn:aws:iam::123456789012:user/bob
+        accountId: "123456789012"
+      recipientAccountId: "123456789012"
+  
+  - Name: Unrelated SSM Event (Should NOT Alert)
+    ExpectedResult: false
+    Log:
+      eventVersion: "1.08"
+      eventName: DescribeInstanceInformation
+      eventSource: ssm.amazonaws.com
+      eventTime: "2024-08-02T08:23:24Z"
+      eventType: AwsApiCall
+      awsRegion: us-east-1
+      requestParameters:
+        filters:
+          - key: InstanceIds
+            values:
+              - i-1234567890abcdef0
+      sourceIPAddress: 203.0.113.42
+      userAgent: aws-cli/2.1.34
+      userIdentity:
+        type: IAMUser
+        arn: arn:aws:iam::123456789012:user/admin
+        accountId: "123456789012"
+      recipientAccountId: "123456789012"
+
