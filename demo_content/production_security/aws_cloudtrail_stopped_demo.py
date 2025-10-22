@@ -11,14 +11,9 @@ def rule(event):
     return aws_cloudtrail_success(event) and event.get("eventName") in CLOUDTRAIL_STOP_DELETE
 
 
-def dedup(event):
-    # Merge on the CloudTrail ARN
-    return event.deep_get("requestParameters", "name", default="<UNKNOWN_NAME>")
-
-
 def title(event):
     return (
-        f"CloudTrail [{dedup(event)}] in account "
+        f"CloudTrail [{event.deep_get('requestParameters', 'name')}] in account "
         f"[{lookup_aws_account_name(event.get('recipientAccountId'))}] was stopped/deleted"
     )
 
