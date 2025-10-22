@@ -1,6 +1,6 @@
 AnalysisType: rule
 Enabled: true
-RuleID: AWS.IAM.CreateUser.StratusRedTeam.Demo
+RuleID: AWS.IAM.CreateUser.StratusRedTeam.Custom
 LogTypes:
   - AWS.CloudTrail
 Severity: High
@@ -23,11 +23,17 @@ Detection:
         Condition: Equals
         Value: StratusRedTeam
 Tags:
-  - AWS
-  - IAM
-  - Red Team
-  - Testing
-  - MITRE ATT&CK
+  - compliance.soc2
+  - compliance.iso27001
+  - compliance.nist_csf
+  - usecase.privileged_access_monitoring
+  - usecase.insider_threat_detection
+  - usecase.authentication_monitoring
+  - mitre.ta0003.persistence
+  - mitre.t1136.create_account
+  - asset.identity_management
+  - threat.external
+  - risk.high
 Reports:
   MITRE ATT&CK:
     - TA0003:T1136.003  # Persistence:Create Account:Cloud Account
