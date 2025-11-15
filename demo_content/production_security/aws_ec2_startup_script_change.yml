@@ -4,6 +4,17 @@ Description: Detects changes to the EC2 instance startup script. The shell scrip
 DisplayName: "AWS EC2 Startup Script Change"
 Enabled: true
 Filename: aws_ec2_startup_script_change.py
+Tags:
+  # Required tags
+  - compliance.soc2
+  - usecase.configuration_management
+  - usecase.insider_threat_detection
+  # Optional tags
+  - mitre.ta0002.execution
+  - mitre.t1059.command_and_scripting_interpreter
+  - threat.insider
+  - impact.integrity
+
 Reports:
   MITRE ATT&CK:
     - TA0002:T1059

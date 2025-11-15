@@ -14,10 +14,15 @@ Description: >
   and failed console login attempts for monitoring user authentication activity 
   and maintaining audit trails of console access.
 Tags:
-  - AWS
-  - Authentication
-  - Console Access
-  - Demo
+  # Required tags
+  - compliance.soc2
+  - usecase.authentication_monitoring
+  - usecase.privileged_access_monitoring
+  # Optional tags
+  - mitre.ta0001.initial_access
+  - mitre.t1078.valid_accounts
+  - asset.identity_management
+
 Reports:
   MITRE ATT&CK:
     - "TA0001:T1078"  # Valid Accounts

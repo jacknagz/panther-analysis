@@ -10,13 +10,12 @@ Description: >
   Detects when an EC2 instance is launched without the required tags 'team_owner' or 'deployment_segment'.
   This may indicate a server spun up outside of normal processes, potentially for malicious purposes.
 Tags:
-  - aws.ec2
-  - demo
-  - resource.create
+  # Required tags
   - compliance.soc2
-  - discovery.cloud_services
-  - policy.change
-  - defense_evasion.account_manipulation
+  - usecase.configuration_management
+  # Optional tags
+  - asset.identity_management
+
 InlineFilters:
   - KeyPath: eventSource
     Condition: Equals

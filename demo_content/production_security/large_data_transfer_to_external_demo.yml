@@ -24,10 +24,16 @@ SummaryAttributes:
   - log_status
 Threshold: 1
 Tags:
-  - exfiltration
-  - network
+  # Required tags
   - compliance.soc2
-  - data-loss-prevention
+  - usecase.insider_threat_detection
+  # Optional tags
+  - mitre.ta0010.exfiltration
+  - mitre.t1537.transfer_data_to_cloud_account
+  - threat.insider
+  - threat.external
+  - impact.confidentiality
+
 Tests:
   - Name: Large Transfer to External
     ExpectedResult: true

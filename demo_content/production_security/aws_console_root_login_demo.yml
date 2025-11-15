@@ -7,11 +7,18 @@ DedupPeriodMinutes: 15
 LogTypes:
   - AWS.CloudTrail
 Tags:
-  - AWS
-  - Identity & Access Management
-  - Authentication
-  - DemoThreatHunting
-  - Privilege Escalation:Valid Accounts
+  # Required tags
+  - compliance.soc2
+  - compliance.nist_csf
+  - usecase.privileged_access_monitoring
+  - usecase.authentication_monitoring
+  # Optional tags
+  - mitre.ta0004.privilege_escalation
+  - mitre.t1078.valid_accounts
+  - asset.identity_management
+  - threat.insider
+  - threat.external
+
 Reports:
   CIS:
     - 3.6

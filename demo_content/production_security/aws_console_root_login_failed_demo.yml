@@ -7,11 +7,18 @@ DedupPeriodMinutes: 15
 LogTypes:
   - AWS.CloudTrail
 Tags:
-  - AWS
-  - Identity & Access Management
-  - Authentication
-  - DemoThreatHunting
-  - Credential Access:Brute Force
+  # Required tags
+  - compliance.soc2
+  - compliance.nist_csf
+  - usecase.authentication_monitoring
+  - usecase.privileged_access_monitoring
+  # Optional tags
+  - mitre.ta0006.credential_access
+  - mitre.t1110.brute_force
+  - asset.identity_management
+  - threat.external
+  - threat.automated
+
 Threshold: 5
 Reports:
   CIS:

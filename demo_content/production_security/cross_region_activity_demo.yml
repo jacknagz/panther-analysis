@@ -23,10 +23,14 @@ SummaryAttributes:
   - sourceIPAddress
   - eventTime
 Tags:
-  - aws
-  - credential-compromise
-  - automation
+  # Required tags
   - compliance.soc2
+  - usecase.insider_threat_detection
+  # Optional tags
+  - mitre.ta0007.discovery
+  - threat.insider
+  - threat.automated
+
 Tests:
   - Name: Activity in three regions (should alert)
     ExpectedResult: true

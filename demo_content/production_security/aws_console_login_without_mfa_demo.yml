@@ -6,10 +6,17 @@ Enabled: true
 LogTypes:
   - AWS.CloudTrail
 Tags:
-  - AWS
-  - Identity & Access Management
-  - Authentication
-  - Initial Access:Valid Accounts
+  # Required tags
+  - compliance.soc2
+  - compliance.iso27001
+  - usecase.authentication_monitoring
+  - usecase.privileged_access_monitoring
+  # Optional tags
+  - mitre.ta0001.initial_access
+  - mitre.t1078.valid_accounts
+  - asset.identity_management
+  - threat.external
+
 Reports:
   CIS:
     - 3.2

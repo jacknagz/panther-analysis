@@ -24,11 +24,16 @@ SummaryAttributes:
   - awsRegion
 Threshold: 1
 Tags:
-  - aws.s3
-  - sso
+  # Required tags
   - compliance.soc2
-  - data-destruction
-  - detection.privilege_escalation
+  - usecase.insider_threat_detection
+  - usecase.privileged_access_monitoring
+  # Optional tags
+  - mitre.ta0040.impact
+  - mitre.t1485.data_destruction
+  - threat.insider
+  - impact.availability
+
 Tests:
   - Name: S3 Bucket deleted by SSO-like role in us-west-2 (should alert)
     ExpectedResult: true
