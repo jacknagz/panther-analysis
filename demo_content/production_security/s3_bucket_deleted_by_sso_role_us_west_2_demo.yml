@@ -10,10 +10,9 @@ DedupPeriodMinutes: 60
 Description: |
   Detects when an S3 bucket is deleted in region us-west-2 by an SSO-like role (AWS SSO or similar). This may indicate unauthorized or risky administrative activity.
 Runbook: |
-  1. Review CloudTrail events for the actor and S3 bucket in us-west-2 around the time of this alert.
-  2. Confirm if the SSO role deletion was expected and authorized.
-  3. Investigate any follow-up actions performed by the SSO role.
-  4. If unauthorized, restore the bucket if possible and review SSO permissions.
+  1. Query CloudTrail for all S3 API calls by the SSO role in us-west-2 in the 1 hour before and after the bucket deletion to identify related activity
+  2. Check if the bucket had versioning enabled and if objects were deleted before the bucket deletion within 24 hours
+  3. Search for other destructive S3 actions (DeleteBucket, DeleteBucketPolicy, PutLifecycleConfiguration) by SSO roles in the past 7 days
 Reference: https://docs.aws.amazon.com/AmazonS3/latest/userguide/DeletingObjects.html
 SummaryAttributes:
   - userIdentity:arn

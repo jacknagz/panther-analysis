@@ -23,6 +23,10 @@ Reports:
 Severity: High
 Description: >
   This rule detects potentially suspicious or high-risk administrative actions taken against Amazon Macie within an AWS environment. It monitors for API events such as disabling Macie, archiving findings, modifying or deleting findings filters, disassociating accounts, and other session or membership changes. These actions may indicate attempts to evade data security monitoring, disrupt sensitive data discovery, or impair organizational visibility into data risks. By alerting on these specific Macie-related events, the rule helps security teams quickly identify and investigate possible evasion or tampering activities targeting Amazon Macie's data protection capabilities.
+Runbook: |
+  1. Query CloudTrail for all Macie-related API calls by the actor ARN in the 12 hours before and after this event to identify patterns of evasion
+  2. Find all other detection system modifications by this principal (CloudTrail, GuardDuty, SecurityHub) in the past 7 days
+  3. Check if Macie findings were archived or deleted immediately before this configuration change
 Reference: https://aws.amazon.com/macie/
 DedupPeriodMinutes: 60
 Threshold: 2

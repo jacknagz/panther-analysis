@@ -9,6 +9,10 @@ Severity: High
 Description: >
   Detects when an EC2 instance is launched without the required tags 'team_owner' or 'deployment_segment'.
   This may indicate a server spun up outside of normal processes, potentially for malicious purposes.
+Runbook: |
+  1. Query CloudTrail for the RunInstances event that created this untagged instance to identify the launching principal and source IP
+  2. Find all other EC2 instances launched by the same principal in the past 30 days and check their tagging compliance
+  3. Search for automated deployment or infrastructure-as-code activity that may have created this instance
 Tags:
   # Required tags
   - compliance.soc2

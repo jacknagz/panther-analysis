@@ -17,9 +17,10 @@ Severity: High
 DedupPeriodMinutes: 60
 Description: >
   A high-severity GuardDuty finding has been identified.
-Runbook: >
-  Search related logs to understand the root cause of the activity.
-  Search the Panther Summary Attribute type value in https://docs.aws.amazon.com/guardduty/latest/ug/guardduty_finding-types-active.html for additional details.
+Runbook: |
+  1. Query CloudTrail for all API calls by the principal in the alert in the 6 hours before and after the GuardDuty finding
+  2. Search for other GuardDuty findings with the same principal ARN or source IP in the past 7 days to identify related activity patterns
+  3. Check if the source IP is associated with VPN endpoints, known administrator locations, or threat intelligence feeds
 Reference: https://docs.aws.amazon.com/guardduty/latest/ug/guardduty_findings.html#guardduty_findings-severity
 SummaryAttributes:
   - severity

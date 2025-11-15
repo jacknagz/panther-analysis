@@ -27,7 +27,10 @@ Reports:
     - TA0006:T1110
 Severity: High
 Description: A Root console login failed.
-Runbook: https://docs.runpanther.io/alert-runbooks/built-in-rules/aws-console-login-failed
+Runbook: |
+  1. Count all failed root login attempts in the 1 hour before this alert to identify potential brute force patterns
+  2. Check if a successful root login occurred after the failed attempts from the same or different source IP
+  3. Search for password reset requests or account recovery activity for the root account in the 24 hours around this alert
 Reference: https://amzn.to/3aMSmTd
 SummaryAttributes:
   - userAgent
