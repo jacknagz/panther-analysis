@@ -6,17 +6,16 @@ Enabled: true
 LogTypes:
   - AWS.S3ServerAccess
 Tags:
-  - demo
-  # Service/Platform tags
-  - aws.s3
-  # Behaviors/Actions tags
-  - data.download_external
-  - resource.permission_change
-  # Compliance tags
+  # Required tags
   - compliance.soc2
-  # MITRE tags
-  - collection.data_from_cloud_storage
-  - exfiltration.transfer_data_to_cloud_storage
+  - usecase.insider_threat_detection
+  - usecase.privileged_access_monitoring
+  # Optional tags
+  - mitre.ta0009.collection
+  - mitre.t1530.data_from_cloud_storage
+  - threat.insider
+  - impact.confidentiality
+
 Reports:
   Panther:
     - Data Access

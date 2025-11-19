@@ -10,20 +10,24 @@ DedupPeriodMinutes: 60
 Description: >
   Detects when AWS GuardDuty reports an EC2 instance is likely being used for unauthorized bitcoin or cryptocurrency mining, based on findings 'CryptoCurrency:EC2/BitcoinTool.B' or 'CryptoCurrency:EC2/BitcoinTool.B!DNS'.
 Tags:
-  - aws.guardduty
-  - crypto.mining
+  # Required tags
   - compliance.soc2
+  - usecase.siem_integrity
+  # Optional tags
+  - mitre.ta0040.impact
+  - mitre.t1496.resource_hijacking
+  - asset.detection_controls
+  - threat.external
+  - impact.availability
+
 Reports:
   MITRE ATT&CK:
     - TA0040:T1496 # Impact: Resource Hijacking
 Reference: https://docs.aws.amazon.com/guardduty/latest/ug/guardduty_finding-types-ec2.html
 Runbook: |
-  1. Review the EC2 instance in the finding for unauthorized cryptocurrency mining activity.
-  2. Isolate the instance from the network to prevent further abuse.
-  3. Capture forensic evidence (memory, disk snapshot) if needed.
-  4. Terminate or remediate the instance as appropriate.
-  5. Review IAM activity and network logs for lateral movement or persistence.
-  6. If mining is expected, consider suppressing this finding for the instance.
+  1. Query VPC Flow Logs and CloudTrail for all network connections and API calls from the affected EC2 instance in the 24 hours before the finding
+  2. Find all IAM activity and other GuardDuty findings for the instance's IAM role in the past 7 days to identify potential compromise or lateral movement
+  3. Check if the instance was recently launched or if user data scripts were modified within 48 hours before the finding
 SummaryAttributes:
   - severity
   - type
