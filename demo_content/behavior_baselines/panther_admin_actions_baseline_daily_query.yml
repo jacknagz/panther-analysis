@@ -63,7 +63,7 @@ Query: |
         ELSE 1.0
       END as event_risk_score
     FROM panther_logs.public.panther_audit
-    WHERE p_occurs_since('1d')
+    WHERE p_occurs_since('3d')
       AND actionName NOT IN ('UPDATE_DETECTION_STATE', 'CREATE_DETECTION', 'DELETE_DETECTION', 'UPDATE_DETECTION')
       AND actionName NOT LIKE '%LOGIN%'
       AND actionResult = 'SUCCEEDED'
@@ -192,5 +192,5 @@ Query: |
   WHERE total_risk_score > 2.0
   ORDER BY total_risk_score DESC, destinations_deleted DESC
 Schedule:
-  RateMinutes: 1440  # Daily execution
-  TimeoutMinutes: 10
+  RateMinutes: 4320  # 3 days
+  TimeoutMinutes: 5

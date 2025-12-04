@@ -8,7 +8,7 @@ TIME_WINDOW_MINUTES = 10
 
 # Event-specific thresholds for unique secrets/actions
 EVENT_THRESHOLDS = {
-    "ListSecrets": 2,  # Broad reconnaissance
+    "ListSecrets": 5,  # Broad reconnaissance - increased from 2 to reduce FPs from deployments
     "DescribeSecret": 3,  # Targeted investigation
     "GetSecretValue": 5,  # Secret exfiltration
     "BatchGetSecretValue": 1,  # Single batch operation is suspicious

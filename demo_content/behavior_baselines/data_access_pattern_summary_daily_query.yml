@@ -46,7 +46,7 @@ Query: |
            ELSE 'other' END as service_type,
       p_event_time
     FROM panther_logs.public.aws_cloudtrail
-    WHERE p_occurs_since('24h')
+    WHERE p_occurs_since('3d')
       AND eventSource IN ('s3.amazonaws.com', 'secretsmanager.amazonaws.com')
       AND eventName IN ('GetObject', 'PutObject', 'DeleteObject', 'CopyObject', 'RestoreObject',
                        'GetSecretValue', 'BatchGetSecretValue', 'DescribeSecret', 'ListSecrets')
@@ -161,5 +161,5 @@ Query: |
   WHERE risk_score > 3.0  -- Focus on potentially suspicious users
   ORDER BY risk_score DESC, total_gb_accessed DESC
 Schedule:
-  RateMinutes: 1440  # 24 hours
-  TimeoutMinutes: 10
+  RateMinutes: 4320  # 3 days
+  TimeoutMinutes: 5

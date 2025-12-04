@@ -1,6 +1,6 @@
 AnalysisType: scheduled_query
 QueryName: "EC2 Compute Abuse Summary Daily Query"
-Enabled: true
+Enabled: false
 Description: >
   Daily analysis of EC2 compute resource usage patterns to detect potential abuse including
   cryptocurrency mining, unauthorized high-performance computing, bulk instance launches, and
@@ -54,7 +54,7 @@ Query: |
         ELSE 0.0
       END as event_risk_score
     FROM panther_logs.public.aws_cloudtrail
-    WHERE p_occurs_since('24h')
+    WHERE p_occurs_since('3d')
       AND eventSource = 'ec2.amazonaws.com'
       AND eventName IN ('RunInstances', 'TerminateInstances', 'StopInstances', 'StartInstances')
       AND errorCode IS NULL
@@ -169,5 +169,5 @@ Query: |
      OR total_instances_requested > 15  -- Always include bulk launches
   ORDER BY total_risk_score DESC, gpu_instances DESC, total_instances_requested DESC
 Schedule:
-  RateMinutes: 1440  # 24 hours
-  TimeoutMinutes: 15
+  RateMinutes: 4320  # 3 days
+  TimeoutMinutes: 5
