@@ -4,11 +4,26 @@ Description: Detects changes to the EC2 instance startup script. The shell scrip
 DisplayName: "AWS EC2 Startup Script Change"
 Enabled: true
 Filename: aws_ec2_startup_script_change.py
+Tags:
+  # Required tags
+  - compliance.soc2
+  - usecase.configuration_management
+  - usecase.insider_threat_detection
+  # Optional tags
+  - mitre.ta0002.execution
+  - mitre.t1059.command_and_scripting_interpreter
+  - threat.insider
+  - impact.integrity
+
 Reports:
   MITRE ATT&CK:
     - TA0002:T1059
 Reference: https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/user-data.html#user-data-shell-scripts
 Severity: High
+Runbook: |
+  1. Query CloudTrail for the ModifyInstanceAttribute event to identify who modified the user data script and from what source IP
+  2. Find all API calls by the modifying principal in the 24 hours before and after the change to identify related suspicious activity
+  3. Check if this principal has modified user data scripts on other instances in the past 90 days
 DedupPeriodMinutes: 60
 LogTypes:
   - AWS.CloudTrail

@@ -6,11 +6,18 @@ Enabled: true
 LogTypes:
   - AWS.CloudTrail
 Tags:
-  - AWS
-  - S3
-  - Data Exfiltration 
-  - Ransomware
-  - Data Destruction
+  # Required tags
+  - compliance.soc2
+  - usecase.insider_threat_detection
+  # Optional tags
+  - mitre.ta0010.exfiltration
+  - mitre.ta0040.impact
+  - mitre.t1485.data_destruction
+  - threat.insider
+  - threat.external
+  - impact.availability
+  - impact.confidentiality
+
 Reports:
   MITRE ATT&CK:
     - "TA0010:T1537"  # Transfer Data to Cloud Account

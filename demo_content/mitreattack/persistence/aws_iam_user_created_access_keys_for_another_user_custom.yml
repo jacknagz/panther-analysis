@@ -1,10 +1,18 @@
 AnalysisType: rule
-RuleID: "AWS.IAM.Backdoor.UserKeys.Demo"
-Description: Detects AWS API key creation for a user by another user. Backdoored users can be used to obtain persistence in the AWS environment.
-DisplayName: "AWS User Backdoor Access Key Created (Demo)"
+RuleID: "AWS.IAM.User.AccessKey.CrossUserCreation.Custom"
+Severity: High
+DedupPeriodMinutes: 60
+LogTypes:
+  - AWS.CloudTrail
+Threshold: 1
+Description: >
+  Detects when one IAM user creates access keys for a different IAM user. This is a common persistence technique where an attacker
+  creates credentials for another user account to maintain access, even if their original access is revoked. In normal operations,
+  users should only create access keys for themselves.
+DisplayName: "IAM User Created Access Keys for Another User"
 Enabled: true
 CreateAlert: true
-Filename: aws_iam_user_key_created_demo.py
+Filename: aws_iam_user_created_access_keys_for_another_user_custom.py
 Reports:
   MITRE ATT&CK:
     - TA0003:T1098
@@ -12,17 +20,24 @@ Reports:
     - TA0005:T1550
     - TA0008:T1550
 Reference: https://docs.aws.amazon.com/IAM/latest/UserGuide/id_credentials_access-keys.html
-Severity: High
-DedupPeriodMinutes: 60
-LogTypes:
-  - AWS.CloudTrail
-Threshold: 1
+Runbook: |
+  1. Assess whether the actor account has been compromised or if this is malicious insider activity
+  2. Check if the actor and target user accounts are related (e.g., service accounts managed by the same team)
+  3. Review CloudTrail logs for any subsequent activity using the newly created access keys
 Tags:
-  - mitre.persistence
-  - mitre.create_account
-  - aws.iam
-  - resource.create
   - compliance.soc2
+  - compliance.iso27001
+  - compliance.nist_csf
+  - usecase.privileged_access_monitoring
+  - usecase.insider_threat_detection
+  - usecase.authentication_monitoring
+  - mitre.ta0003.persistence
+  - mitre.t1098.account_manipulation
+  - mitre.t1136.create_account
+  - asset.identity_management
+  - asset.api_credentials
+  - threat.insider
+  - risk.high
 Tests:
   - ExpectedResult: false
     Log:
@@ -61,7 +76,7 @@ Tests:
           webIdFederationData: {}
         type: IAMUser
         userName: user1
-    Name: user1 create keys for user1
+    Name: User creates access keys for themselves (no alert)
   - ExpectedResult: true
     Log:
       awsRegion: us-east-1
@@ -99,7 +114,7 @@ Tests:
           webIdFederationData: {}
         type: IAMUser
         userName: user1
-    Name: user1 create keys for user2
+    Name: User1 creates access keys for User2 (alert expected)
   - ExpectedResult: true
     Log:
       awsRegion: us-east-1
@@ -137,7 +152,7 @@ Tests:
           webIdFederationData: {}
         type: IAMUser
         userName: user1
-    Name: jackson create keys for jack
+    Name: Jackson creates access keys for Jack (alert expected)
   - ExpectedResult: true
     Log:
       awsRegion: us-east-1
@@ -175,9 +190,9 @@ Tests:
           webIdFederationData: {}
         type: IAMUser
         userName: user1
-    Name: jack create keys for jackson
+    Name: Jack creates access keys for Jackson (alert expected)
   - ExpectedResult: false
-    Name: CreateKey returns error code
+    Name: CreateAccessKey with error code (no alert)
     Log:
       {
         "awsRegion": "us-east-1",

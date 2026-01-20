@@ -49,11 +49,17 @@ DynamicSeverities:
         Value: 1
     ChangeTo: Low
 Tags:
-  - AWS
-  - SSM
-  - EC2
-  - Credential Access
-  - MITRE ATT&CK
+  # Required tags
+  - compliance.soc2
+  - usecase.insider_threat_detection
+  - usecase.privileged_access_monitoring
+  # Optional tags
+  - mitre.ta0006.credential_access
+  - mitre.t1552.unsecured_credentials
+  - threat.insider
+  - threat.external
+  - impact.confidentiality
+
 Reports:
   MITRE ATT&CK:
     - TA0006:T1552.005  # Credential Access: Cloud Instance Metadata API

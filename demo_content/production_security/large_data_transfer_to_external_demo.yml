@@ -11,10 +11,9 @@ DedupPeriodMinutes: 60
 Description: |
   Detects large data transfers (over 100MB) from internal servers to external IP addresses, which could indicate data exfiltration or unauthorized data movement. Alerts when a single flow record exceeds the threshold and the destination is an external IP.
 Runbook: |
-  1. Investigate the source host for signs of compromise or unauthorized data transfer.
-  2. Validate if the transfer was expected.
-  3. Review the destination IP reputation and context.
-  4. If suspicious, isolate the host and perform forensic analysis.
+  1. Query VPC Flow Logs for all connections from the source IP to external destinations in the 2 hours before and after this transfer to identify patterns
+  2. Find CloudTrail activity from the source instance or associated IAM roles in the 6 hours before the transfer to identify potentially malicious API calls
+  3. Check if the destination IP is associated with cloud storage providers, file sharing services, or threat intelligence feeds
 Reference: https://docs.aws.amazon.com/vpc/latest/userguide/flow-log-records.html
 SummaryAttributes:
   - source_ip
@@ -24,10 +23,16 @@ SummaryAttributes:
   - log_status
 Threshold: 1
 Tags:
-  - exfiltration
-  - network
+  # Required tags
   - compliance.soc2
-  - data-loss-prevention
+  - usecase.insider_threat_detection
+  # Optional tags
+  - mitre.ta0010.exfiltration
+  - mitre.t1537.transfer_data_to_cloud_account
+  - threat.insider
+  - threat.external
+  - impact.confidentiality
+
 Tests:
   - Name: Large Transfer to External
     ExpectedResult: true

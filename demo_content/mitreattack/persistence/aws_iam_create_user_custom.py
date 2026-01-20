@@ -7,7 +7,7 @@ def rule(event):
 
 def title(event):
     actor_arn = event.deep_get("userIdentity", "arn", default="")
-    target_user = event.deep_get("requestParameters", "userName", default="")
+    created_user = event.deep_get("requestParameters", "userName", default="")
 
     # Extract meaningful actor name from ARN
     if ":assumed-role/" in actor_arn:
@@ -26,23 +26,24 @@ def title(event):
     else:
         actor_display = actor_arn
 
-    return f"IAM user [{target_user}] created by [{actor_display}]"
+    return f"IAM user [{created_user}] created by [{actor_display}]"
 
 
 def runbook(event):
     return f"""
-We do not allow IAM users to be created. Instead, we use IAM roles for access. Follow these steps to assess the alert:
-1. Check for suspicious follow-up activities like admin IAM policy attachments or access key creation within 1 hour of ({event.get("eventTime", "")}) in the aws_cloudtrail table.
-2. Check if the user still exists by querying the aws_cloudtrail table.
+Our security policy disallows the creation of IAM users. 
+Follow these steps to assess the alert:
+1. Check for suspicious follow-up activities, like admin IAM policy attachments or access key creation, within 1 hour of ({event.get("eventTime", "")}) in the aws_cloudtrail table.
+2. Check if the created user still exists.
 3. Check if this actor has a history of creating IAM users.
 """
 
 
 def alert_context(event):
     context = {
-        "target": event.deep_get("requestParameters", "userName", default=""),
+        "created_user": event.deep_get("requestParameters", "userName", default=""),
         "actor": event.deep_get("userIdentity", "arn", default=""),
-        "timestamp": event.get("eventTime", ""),
+        "timestamp": event.get("p_event_time", ""),
         "parameters": event.deep_get("requestParameters", default={}),
         "action": event.get("eventName", ""),
     }

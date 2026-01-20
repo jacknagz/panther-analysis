@@ -9,7 +9,7 @@ The tag taxonomy is designed to enable structured reporting across multiple dime
 - **Threat intelligence** (MITRE ATT&CK mapping)
 - **Use case categorization** (insider threats, SIEM integrity, etc.)
 - **Asset classification** (identity systems, detection controls, etc.)
-- **Risk assessment** (impact and likelihood ratings)
+- **Impact assessment** (availability, confidentiality, integrity impacts)
 
 ## Tag Categories
 
@@ -117,37 +117,6 @@ Tags:
   - asset.detection_controls
 ```
 
-### Risk Assessment Tags
-
-Risk and impact classification:
-
-- `risk.high` - High risk events requiring immediate attention
-- `risk.medium` - Medium risk events requiring investigation
-- `impact.availability` - Events affecting system availability
-
-**Usage Example:**
-```yaml
-Tags:
-  - risk.high
-  - impact.availability
-```
-
-**Reporting Query:**
-```sql
-SELECT 
-  severity,
-  CASE 
-    WHEN ARRAY_CONTAINS('risk.high'::VARIANT, p_any_tags) THEN 'High Risk'
-    WHEN ARRAY_CONTAINS('risk.medium'::VARIANT, p_any_tags) THEN 'Medium Risk'
-    ELSE 'Standard Risk'
-  END as risk_level,
-  COUNT(*) as alert_count
-FROM panther_logs.public.alerts 
-WHERE p_occurs_since('30 d')
-GROUP BY severity, risk_level
-ORDER BY alert_count DESC;
-```
-
 ### Threat Intelligence
 
 Threat actor and attack vector classification:
@@ -163,18 +132,50 @@ Tags:
   - threat.external
 ```
 
+### Impact Assessment Tags
+
+Security impact classification for events (optional):
+
+- `impact.availability` - Events affecting system availability
+- `impact.confidentiality` - Events affecting data confidentiality
+- `impact.integrity` - Events affecting data or system integrity
+
+**Usage Example:**
+```yaml
+Tags:
+  - impact.availability
+  - impact.integrity
+```
+
+**Reporting Query:**
+```sql
+SELECT
+  CASE
+    WHEN ARRAY_CONTAINS('impact.availability'::VARIANT, p_any_tags) THEN 'Availability Impact'
+    WHEN ARRAY_CONTAINS('impact.confidentiality'::VARIANT, p_any_tags) THEN 'Confidentiality Impact'
+    WHEN ARRAY_CONTAINS('impact.integrity'::VARIANT, p_any_tags) THEN 'Integrity Impact'
+    ELSE 'Unspecified Impact'
+  END as impact_type,
+  COUNT(*) as alert_count,
+  AVG(severity) as avg_severity
+FROM panther_logs.public.alerts
+WHERE p_occurs_since('30 d')
+GROUP BY impact_type
+ORDER BY alert_count DESC;
+```
+
 ## Monthly Reporting Examples
 
 ### Executive Dashboard Query
 ```sql
 -- Monthly security metrics summary
-SELECT 
+SELECT
   DATE_TRUNC('month', p_event_time) as report_month,
   COUNT(*) as total_alerts,
-  COUNT_IF(ARRAY_CONTAINS('risk.high'::VARIANT, p_any_tags)) as high_risk_alerts,
+  COUNT_IF(severity = 'CRITICAL' OR severity = 'HIGH') as high_severity_alerts,
   COUNT_IF(ARRAY_CONTAINS('threat.insider'::VARIANT, p_any_tags)) as insider_threats,
   COUNT_IF(ARRAY_CONTAINS('compliance.soc2'::VARIANT, p_any_tags)) as soc2_related
-FROM panther_logs.public.alerts 
+FROM panther_logs.public.alerts
 WHERE p_occurs_since('3 months')
 GROUP BY report_month
 ORDER BY report_month DESC;
@@ -214,17 +215,17 @@ ORDER BY detection_count DESC;
 
 ### Insider Threat Analysis
 ```sql
--- High-risk insider threat events
-SELECT 
+-- High-severity insider threat events
+SELECT
   p_event_time,
   rule_id,
   title,
   severity,
   actor_name,
   source_ip
-FROM panther_logs.public.alerts 
+FROM panther_logs.public.alerts
 WHERE ARRAY_CONTAINS('threat.insider'::VARIANT, p_any_tags)
-  AND ARRAY_CONTAINS('risk.high'::VARIANT, p_any_tags)
+  AND (severity = 'CRITICAL' OR severity = 'HIGH')
   AND p_occurs_since('7 d')
 ORDER BY p_event_time DESC;
 ```
@@ -240,19 +241,17 @@ ORDER BY p_event_time DESC;
 
 ### Required Tags
 
-Every demo detection rule must include:
-- `demo` - Identifies rule as demonstration content
+Every detection rule must include:
 - At least one compliance tag
 - At least one use case tag
-- A risk assessment tag
 
 ### Optional Tags
 
 Additional context tags as appropriate:
-- MITRE ATT&CK mappings
-- Asset classifications
-- Threat intelligence indicators
-- Impact assessments
+- MITRE ATT&CK mappings (e.g., `mitre.ta0005.defense_evasion`, `mitre.t1562.impair_defenses`)
+- Asset classifications (e.g., `asset.identity_management`, `asset.logging_infrastructure`)
+- Threat intelligence indicators (e.g., `threat.insider`, `threat.external`)
+- Impact assessments (e.g., `impact.availability`, `impact.confidentiality`, `impact.integrity`)
 
 ## Maintenance
 

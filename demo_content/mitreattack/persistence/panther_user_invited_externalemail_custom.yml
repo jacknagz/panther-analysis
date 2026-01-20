@@ -22,11 +22,8 @@ Description: |
 DedupPeriodMinutes: 60
 Threshold: 1
 Runbook: |
-    1. Review the actor who invited the user and confirm if the invitation was expected and authorized. 
-    2. Verify the external email address and domain for legitimacy and business justification. 
-    3. Check if the external user requires access and if proper approval was obtained. 
-    4. If unauthorized, revoke the invitation immediately and investigate for policy violations. 
-    5. Consider implementing domain restrictions or approval workflows for external user invitations.
+    1. Verify the external email address and domain for legitimacy and business justification.
+    2. Check if the user signed in after being invited. If they did, analyze their actions.
 Reference: https://docs.panther.com/system-configuration/panther-audit-logs
 Detection:
     - KeyPath: actionName

@@ -6,10 +6,13 @@ Enabled: true
 LogTypes:
   - AWS.VPCFlow
 Tags:
-  - vpc
-  - network
-  - demo
-  - ssh
+  # Required tags
+  - compliance.soc2
+  - usecase.authentication_monitoring
+  # Optional tags
+  - mitre.ta0001.initial_access
+  - threat.external
+
 Severity: Info
 CreateAlert: false
 Description: >

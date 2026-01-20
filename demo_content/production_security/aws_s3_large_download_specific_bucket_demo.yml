@@ -7,10 +7,15 @@ ScheduledQueries:
   - AWS S3 Large Download
 Severity: Medium
 Tags:
-  - AWS
-  - S3
-  - Data Exfiltration
-  - CloudTrail
+  # Required tags
+  - compliance.soc2
+  - usecase.insider_threat_detection
+  # Optional tags
+  - mitre.ta0010.exfiltration
+  - mitre.t1537.transfer_data_to_cloud_account
+  - threat.insider
+  - impact.confidentiality
+
 Reports:
   MITRE ATT&CK:
     - "TA0010:T1537"  # Exfiltration: Transfer Data to Cloud Account

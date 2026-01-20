@@ -9,6 +9,15 @@ LogTypes:
 Severity: Info
 DedupPeriodMinutes: 60
 Threshold: 1
+Tags:
+  # Required tags
+  - compliance.soc2
+  - usecase.authentication_monitoring
+  # Optional tags
+  - mitre.ta0001.initial_access
+  - mitre.t1078.valid_accounts
+  - asset.identity_management
+
 Tests:
     - Name: Test-94439c
       ExpectedResult: true

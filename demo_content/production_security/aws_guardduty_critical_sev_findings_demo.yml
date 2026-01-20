@@ -6,7 +6,15 @@ Enabled: true
 LogTypes:
   - AWS.GuardDuty
 Tags:
-  - AWS
+  # Required tags
+  - compliance.soc2
+  - compliance.nist_csf
+  - usecase.siem_integrity
+  # Optional tags
+  - asset.detection_controls
+  - threat.external
+  - impact.confidentiality
+
 Severity: Critical
 DedupPeriodMinutes: 15
 Description: >

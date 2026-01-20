@@ -6,6 +6,18 @@ Enabled: true
 LogTypes:
   - AWS.CloudTrail
 Severity: Medium
+Tags:
+  # Required tags
+  - compliance.soc2
+  - usecase.insider_threat_detection
+  - usecase.configuration_management
+  # Optional tags
+  - mitre.ta0007.discovery
+  - mitre.t1580.cloud_infrastructure_discovery
+  - asset.identity_management
+  - threat.insider
+  - impact.confidentiality
+
 Reports:
   MITRE ATT&CK:
     - TA0007:T1580
@@ -27,12 +39,6 @@ SummaryAttributes:
   - sourceIpAddress
   - recipientAccountId
   - p_any_aws_instance_ids
-Tags:
-  - AWS CloudTrail
-  - EC2
-  - Discovery
-  - Cloud Infrastructure Discovery
-  - Discovery - Cloud Infrastructure Discovery
 Tests:
   - Name: Unsuccessful Attempt
     ExpectedResult: true

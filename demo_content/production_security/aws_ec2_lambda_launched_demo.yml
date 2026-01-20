@@ -7,13 +7,13 @@ LogTypes:
 Severity: Info
 CreateAlert: false
 Tags:
-  - demo
-  - aws.ec2
-  - aws.lambda
-  - resource.create
-  - cloud
+  # Required tags
   - compliance.soc2
-  - detection.lifecycle
+  - usecase.configuration_management
+  # Optional tags
+  - mitre.ta0002.execution
+  - asset.identity_management
+
 Description: >
   Generates a signal every time an EC2 instance is launched or a Lambda function is created in AWS. Useful for monitoring all compute and serverless creation events for inventory, auditing, or anomaly detection.
 Reference: https://docs.aws.amazon.com/AWSEC2/latest/APIReference/API_RunInstances.html
