@@ -21,7 +21,6 @@ GroupBy:
 Threshold: 10
 DedupPeriodMinutes: 60
 Tags:
-  - custom
   - compliance.soc2
   - mitre.ta0006.credential_access
   - mitre.t1110.brute_force
