@@ -15,13 +15,17 @@ mypy = "~=1.5"
 pre-commit = "~=4.2"
 pylint = "~=2.17"
 wrapt = "~=1.15"
+loganon = "~=0.1"
+pydantic = "~=2.11"
 
 [packages]
 policyuniverse = "==1.5.1.20230817"
 requests = "==2.32.4"
-panther-analysis-tool = "~=1.0.3"
+panther-analysis-tool = "~=1.4.0"
 panther-detection-helpers = "==0.4.0"
 pycountry = "==24.6.1"
+typing-extensions = "*"
+typer = "~=0.20.0"
 
 [requires]
 python_version = "3.11"

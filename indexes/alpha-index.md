@@ -38,10 +38,12 @@
 - [AWS VPCDns](#aws-vpcdns)
 - [AWS VPCFlow](#aws-vpcflow)
 - [AWS WAF](#aws-waf)
+- [AWS WAFWebACL](#aws-wafwebacl)
 - [AppOmni](#appomni)
 - [Asana](#asana)
 - [Atlassian](#atlassian)
 - [Auth0](#auth0)
+- [Axonius](#axonius)
 - [Azure](#azure)
 
 
@@ -117,7 +119,7 @@
   - This policy validates that CloudTrail S3 buckets are not publicly accessible.
 - [AWS CloudTrail SES Check Identity Verifications](../rules/aws_cloudtrail_rules/aws_cloudtrail_ses_check_identity_verifications.yml)
 - [AWS CloudTrail SES Check Send Quota](../rules/aws_cloudtrail_rules/aws_cloudtrail_ses_check_send_quota.yml)
-  - Detect when someone checks how many emails can be delivered via SES
+  - Detect when someone checks how many emails can be delivered via SES. Excludes automated checks from AWS Trusted Advisor to reduce false positives.
 - [AWS CloudTrail SES Check SES Sending Enabled](../rules/aws_cloudtrail_rules/aws_cloudtrail_ses_check_ses_sending_enabled.yml)
   - Detect when a user inquires whether SES Sending is enabled.
 - [AWS CloudTrail SES Enumeration](../rules/aws_cloudtrail_rules/aws_cloudtrail_ses_enumeration.yml)
@@ -194,6 +196,14 @@
   - This rule detects when multiple objects are deleted from an S3 bucket. Such actions can be indicative of unauthorized data deletion or other suspicious activities.
 - [AWS S3 Large Download](../queries/aws_queries/aws_s3_large_download_specific_bucket_query.yml)
   - Returns S3 GetObject events where a user has downloaded more than the configured threshold  of data within the specified time window. Supports filtering by bucket patterns and user types.
+- [AWS S3 Object Copied to External Account Bucket](../rules/aws_cloudtrail_rules/aws_s3_copy_object_to_external_account_bucket.yml)
+  - Detects when an S3 object is copied from one bucket to another bucket in a different AWS account. This could indicate data exfiltration or a ransomware attack where data is copied to an attacker-controlled account.
+- [AWS S3 Object Exfiltration FOLLOWED BY Object Deletion](../correlation_rules/aws_s3_exfiltration_and_deletion.yml)
+  - Detects a ransomware attack pattern where an attacker with compromised AWS credentials exfiltrates data from an S3 bucket to an external AWS account, followed by bulk deletion of objects from the source bucket within a short timeframe. This technique was notably used by the threat actor Bling Libra to extort victims by threatening data destruction or leaks.
+- [AWS S3 Ransomware Note Upload Detection](../rules/aws_cloudtrail_rules/aws_s3_ransomware_note_upload.yml)
+  - This rule detects when files with names commonly associated with ransomware notes are uploaded to S3 buckets. Ransomware attackers often drop ransom notes with distinctive filenames like HOW_TO_DECRYPT_FILES.txt, RANSOM_NOTE.txt, FILES_ENCRYPTED.html, or similar patterns to inform victims about the encryption and provide payment instructions.
+- [AWS S3 Security Controls Disabled](../correlation_rules/aws_s3_disable_security_controls.yml)
+  - Detects the disabling of multiple S3 security controls (logging, versioning and MFA delete protection) on the same bucket within a short timeframe. This pattern is a strong indicator of preparation for ransomware or data destruction attacks, as attackers typically disable recovery mechanisms before encrypting or deleting data. Alerting on this activity enables early intervention before actual data loss occurs.
 - [AWS SAML Activity](../rules/aws_cloudtrail_rules/aws_saml_activity.yml)
   - Identifies when SAML activity has occurred in AWS. An adversary could gain backdoor access via SAML.
 - [AWS Secrets Manager Batch Retrieve Secrets](../rules/aws_cloudtrail_rules/aws_secretsmanager_retrieve_secrets_batch.yml)
@@ -286,12 +296,12 @@
   - A user has subsequent logins from two geographic locations that are very far apart
 - [KMS CMK Disabled or Deleted](../rules/aws_cloudtrail_rules/aws_kms_cmk_loss.yml)
   - A KMS Customer Managed Key was disabled or scheduled for deletion. This could potentially lead to permanent loss of encrypted data.
+- [Lambda Code Updated by IAM User](../rules/aws_cloudtrail_rules/aws_overwrite_lambda_code.yml)
+  - Detects when Lambda function code is updated using direct IAM user credentials instead of assumed roles. This is unusual and may indicate: compromised IAM user credentials, a developer bypassing CI/CD guardrails, or insider threat activity. Modern best practice uses roles for programmatic access, making IAM user activity on Lambda code updates a high-confidence security signal.
+- [Lambda Configuration with Layers Updated by IAM User](../rules/aws_cloudtrail_rules/aws_add_malicious_lambda_extension.yml)
+  - Detects when Lambda function configuration is updated with layers using direct IAM user credentials instead of assumed roles. Lambda layers can execute code before the main function, making them a stealthy persistence mechanism. This is unusual and may indicate: compromised IAM user credentials, a developer bypassing CI/CD guardrails, or insider threat activity attempting to inject malicious layers.
 - [Lambda CRUD Actions](../rules/aws_cloudtrail_rules/aws_lambda_crud.yml)
   - Unauthorized lambda Create, Read, Update, or Delete event occurred.
-- [Lambda Update Function Code](../rules/aws_cloudtrail_rules/aws_overwrite_lambda_code.yml)
-  - Identifies when the code of a Lambda function is updated, which could indicate a potential security risk.
-- [Lambda Update Function Configuration with Layers](../rules/aws_cloudtrail_rules/aws_add_malicious_lambda_extension.yml)
-  - Identifies when a Lambda function configuration is updated with layers, which could indicate a potential security risk.
 - [Logins Without MFA](../rules/aws_cloudtrail_rules/aws_console_login_without_mfa.yml)
   - A console login was made without multi-factor authentication.
 - [Logins Without SAML](../rules/aws_cloudtrail_rules/aws_console_login_without_saml.yml)
@@ -318,6 +328,20 @@
   - Detects S3 data access through VPC endpoints from external/public IP addresses, which could indicate data exfiltration attempts.This rule can be customized with the following overrides:- S3_DATA_ACCESS_OPERATIONS: List of S3 operations to monitor
 - [S3 Bucket Deleted](../rules/aws_cloudtrail_rules/aws_s3_bucket_deleted.yml)
   - A S3 Bucket, Policy, or Website was deleted
+- [S3 Bucket Encryption Deleted](../rules/aws_cloudtrail_rules/aws_s3_delete_bucket_encryption.yml)
+  - Detects when S3 bucket encryption configuration is deleted, which could expose data to unauthorized access or indicate ransomware preparation activity.
+- [S3 Bucket Logging Disabled](../rules/aws_cloudtrail_rules/aws_s3_disable_bucket_logging.yml)
+  - Detects when server access logging is disabled on an S3 bucket, removing audit trail capabilities that could indicate ransomware preparation activity or an attempt to evade detection.
+- [S3 Bucket Replication Deleted](../rules/aws_cloudtrail_rules/aws_s3_delete_bucket_replication.yml)
+  - Detects when S3 bucket replication configuration is deleted, which could prevent data backup and indicate ransomware preparation activity.
+- [S3 Bucket Versioning Suspended](../rules/aws_cloudtrail_rules/aws_s3_suspend_versioning.yml)
+  - Detects when S3 bucket versioning is suspended or disabled, which removes the ability to recover previous versions of objects and is a common precursor to ransomware attacks or data destruction.
+- [S3 MFA Delete Disabled](../rules/aws_cloudtrail_rules/aws_s3_disable_mfa_delete.yml)
+  - Detects when MFA Delete is disabled on an S3 bucket, removing an important security control that prevents accidental or malicious deletion of versioned objects and could indicate ransomware preparation activity.
+- [S3 Object Encrypted with External KMS Key](../rules/aws_cloudtrail_rules/aws_s3_copy_object_cross_account_kms.yml)
+  - Detects when an S3 object is copied with a KMS key belonging to an account ID different than the bucket owner's account ID. This technique is used in S3 ransomware attacks where attackers encrypt objects with their own KMS key from an attacker-controlled AWS account, making the data inaccessible to the original owner. This is often a precursor to ransom demands or permanent data loss.
+- [S3 Public Access Block Deleted](../rules/aws_cloudtrail_rules/aws_s3_delete_public_access_block.yml)
+  - Detects when S3 bucket public access block configuration is deleted, which could allow unauthorized public access to sensitive data or indicate preparation for data exfiltration.
 - [Secret Exposed and not Quarantined](../correlation_rules/secret_exposed_and_not_quarantined.yml)
   - The rule detects when a GitHub Secret Scan detects an exposed secret, which is not followed by the expected quarantine operation in AWS.  When you make a repository public, or push changes to a public repository, GitHub always scans the code for secrets that match partner patterns. Public packages on the npm registry are also scanned. If secret scanning detects a potential secret, we notify the service provider who issued the secret. The service provider validates the string and then decides whether they should revoke the secret, issue a new secret, or contact you directly. Their action will depend on the associated risks to you or them.
 - [Sensitive API Calls Via VPC Endpoint](../rules/aws_cloudtrail_rules/aws_vpce_sensitive_api_calls.yml)
@@ -708,6 +732,12 @@
   - This policy ensures that AWS WAF WebACLs are associated with at least one resource (ALB, CloudFront Distribution, or API Gateway). If a WebACL is not associated with any resources, it is inactive and not providing any protection.
 
 
+## AWS WAFWebACL
+
+- [AWS WAF ReactJS RCE Attempt via Body](../rules/aws_waf_rules/aws_waf_reactjsrce_body.yml)
+  - Detects AWS WAF ReactJSRCE_BODY managed rule matches indicating React2Shell (CVE-2025-55182) ReactJS RCE attempts via HTTP body. Monitors all WAF sources: ALB, CloudFront, API Gateway, AppSync.
+
+
 ## AppOmni
 
 - [AppOmni Alert Passthrough](../rules/appomni_rules/appomni_alert_passthrough.yml)
@@ -767,14 +797,28 @@
 
 ## Auth0
 
+- [Auth0 Attack Protection Monitoring Disabled](../rules/auth0_rules/auth0_attack_protection_disabled.yml)
+  - An attack protection monitoring configuration was changed.
+- [Auth0 Bot Detection Policy Disabled](../rules/auth0_rules/auth0_bot_detection_disabled.yml)
+  - A bot detection policy was disabled.
+- [Auth0 Brute Force](../rules/auth0_rules/auth0_login_brute_force.yml)
+  - Scheduled rule for brute force detection for Auth0 login or signup which looks for incidents of more than 10 incidents in one hour
 - [Auth0 CIC Credential Stuffing](../rules/auth0_rules/auth0_cic_credential_stuffing.yml)
-  - Okta has determined that the cross-origin authentication feature in Customer Identity Cloud (CIC) is prone to being targeted by threat actors orchestrating credential-stuffing attacks.  Okta has observed suspicious activity that started on April 15, 2024.  Review tenant logs for unexpected fcoa, scoa, and pwd_leak events.
+  - Okta has determined that the cross-origin authentication feature in Customer Identity Cloud (CIC) is prone to being targeted by threat actors orchestrating credential-stuffing attacks.  Okta has observed suspicious activity that started on April 15, 2024.  Review tenant logs for unexpected fcoa and scoa events.
 - [Auth0 CIC Credential Stuffing Query](../queries/auth0_queries/auth0_cic_credential_stuffing_query.yml)
   - Okta has determined that the cross-origin authentication feature in Customer Identity Cloud (CIC) is prone to being targeted by threat actors orchestrating credential-stuffing attacks.  Okta has observed suspicious activity that started on April 15, 2024.  Review tenant logs for unexpected fcoa, scoa, and pwd_leak events.  https://sec.okta.com/articles/2024/05/detecting-cross-origin-authentication-credential-stuffing-attacks
 - [Auth0 Custom Role Created](../rules/auth0_rules/auth0_custom_role_created.yml)
   - An Auth0 User created a role in your organization's tenant.
+- [Auth0 Delete Tenant Member](../rules/auth0_rules/auth0_delete_tenant_member.yml)
+  - A tenant member was deleted.
+- [Auth0 Fraud Risk by Volume](../rules/auth0_rules/auth0_fraud_risk_volume.yml)
+  - Detects a surge in either failed, successful or suspicious login attempts using leaked passwords over a window of time and a threshold. Exceeding set threshold may indicate potential fraud.
 - [Auth0 Integration Installed](../rules/auth0_rules/auth0_integration_installed.yml)
   - An Auth0 integration was installed from the auth0 action library.
+- [Auth0 Leaked Password Login Attempt](../rules/auth0_rules/auth0_leaked_password_login_attempt.yml)
+  - Detect Auth0 Leaked Password Login Attempt
+- [Auth0 Limit Detections](../rules/auth0_rules/auth0_limits.yml)
+  - Detect Auth0 Limit Logs
 - [Auth0 mfa factor enabled](../rules/auth0_rules/auth0_mfa_factor_setting_enabled.yml)
   - An Auth0 user enabled an mfa factor in your organization's mfa settings.
 - [Auth0 MFA Policy Disabled](../rules/auth0_rules/auth0_mfa_policy_disabled.yml)
@@ -785,29 +829,189 @@
   - An Auth0 User disabled the mfa risk assessment setting for your organization's tenant.
 - [Auth0 MFA Risk Assessment Enabled](../rules/auth0_rules/auth0_mfa_risk_assessment_enabled.yml)
   - An Auth0 User enabled the mfa risk assessment setting for your organization's tenant.
+- [Auth0 New Admin Invited](../rules/auth0_rules/auth0_new_admin_invited.yml)
+  - A new admin invitation was issued.
+- [Auth0 New Admin Invited FOLLOWED BY Tenant Member Account Deletion](../correlation_rules/auth0_account_takeover.yml)
+  - A user was invited as admin and shortly after deleted tenant member accounts. This may indicate account takeover attempts.
 - [Auth0 Post Login Action Flow Updated](../rules/auth0_rules/auth0_post_login_action_flow.yml)
   - An Auth0 User updated a post login action flow for your organization's tenant.
+- [Auth0 Push Notification Fatigue](../rules/auth0_rules/auth0_push_notification_fatigue.yml)
+  - Push notifications threshold exceeded for a user. It may indicate a push notification fatigue attempt.
+- [Auth0 Rapid Dynamic Client Creation](../rules/auth0_rules/auth0_rapid_dynamic_client_creation.yml)
+  - Detects a spike in registered dynamic clients. This can indicate attempts to use such dynamic clients for malicious purposes.
+- [Auth0 Refresh Token Reused](../rules/auth0_rules/auth0_token_reuse.yml)
+  - A refresh token was reused.
+- [Auth0 Same Phone Number Shared Across Multiple Users as MFA](../rules/auth0_rules/auth0_same_phone_mfa_multiple_users.yml)
+  - Detecs when more than one user shares a phone number with another for MFA purposes. Attackers may register their phone number for multiple compromised accounts.
 - [Auth0 User Invitation Created](../rules/auth0_rules/auth0_user_invitation_created.yml)
 - [Auth0 User Joined Tenant](../rules/auth0_rules/auth0_user_joined_tenant.yml)
   - User accepted invitation from Auth0 member to join an Auth0 tenant.
 
 
+## Axonius
+
+- [Axonius API Key Reset](../rules/axonius_rules/axonius_resetapikey.yml)
+  - Detects an Axonius API Key Reset
+- [Axonius External User Added](../rules/axonius_rules/axonius_add_external_user.yml)
+  - Detects when an external user is added in Axonius
+- [Axonius login from Tor IP](../rules/axonius_rules/axonius_too_many_failed_logins.yml)
+  - Detects an Axonius login from a malicious IP address
+- [Axonius Webhook Created](../rules/axonius_rules/axonius_webhook_created.yml)
+  - Detects when an Axonius Webhook is Created
+
+
 ## Azure
 
+- [Azure Action Groups Deleted](../rules/azure_activity_rules/azure_action_groups_deleted.yml)
+  - Detects when Azure action groups are deleted, which could disable alert notifications to security teams to prevent incident response.
+- [Azure Advisor Security Recommendation Available](../rules/azure_activity_rules/azure_advisor_security_recommendation.yml)
+  - Detects when Azure Advisor generates a new security recommendation for a resource. Azure Advisor analyzes your resource configurations and usage telemetry to recommend solutions that can help improve security, cost effectiveness, performance, reliability, and operational excellence.
+- [Azure Alert Rules Deleted](../rules/azure_activity_rules/azure_alert_rules_deleted.yml)
+  - Detects when Azure alert rules are deleted. Deleting alert rules disables security notifications and is a common defense evasion technique.
+- [Azure Alert Suppression Rule Created or Modified](../rules/azure_activity_rules/azure_alert_suppression_rule_created.yml)
+  - Detects when an Azure Security Center alert suppression rule is created or modified. Alert suppression rules allow filtering of specific security alerts to reduce noise, but adversaries may abuse this feature to silence alerts related to their malicious activities. While legitimate use cases exist (suppressing known false positives), new suppression rules should be reviewed to ensure they don't hide indicators of compromise.
+- [Azure Authentication Methods Policy OIDC Discovery URL Changed](../rules/azure_signin_rules/azure_auth_methods_policy_oidc_change.yml)
+  - Detects modifications to the OIDC discovery URL in Azure Entra ID's Authentication Methods Policy. This technique enables attackers to federate the tenant with attacker-controlled identity providers, bypassing multi-factor authentication and enabling unauthorized access through bring-your-own IdP methods.
+- [Azure Automation Account Created](../rules/azure_activity_rules/azure_automation_account_created.yml)
+  - Detects when an Azure Automation account is created. Azure Automation accounts can be used to automate management tasks and orchestrate actions across systems. Adversaries may create Automation accounts to maintain persistence in their target's environment by leveraging managed identities and runbooks to execute code with elevated privileges.
+- [Azure Automation Runbook Created or Modified](../rules/azure_activity_rules/azure_automation_runbook_created_or_modified.yml)
+  - Detects when an Azure Automation runbook is created, modified, or published. Runbooks contain executable code that can automate tasks within Azure environments. Adversaries may abuse runbooks for persistence, privilege escalation, or execution of malicious scripts. This rule monitors draft creation, runbook modifications, and publishing activities that could indicate unauthorized automation code deployment.
+- [Azure Automation Runbook Deleted](../rules/azure_activity_rules/azure_automation_runbook_deleted.yml)
+  - Detects when an Azure Automation runbook is deleted. Adversaries may delete runbooks to cover their tracks after using them for malicious purposes, to disrupt automated security responses, or to eliminate forensic evidence. Legitimate runbook deletions should be rare and controlled through change management processes.
+- [Azure Automation Schedule Created or Modified](../rules/azure_activity_rules/azure_automation_schedule_created.yml)
+  - Detects when an Azure Automation schedule is created or modified. Schedules define when and how often automation runbooks execute. Adversaries may create or modify schedules to establish persistence by executing malicious runbooks at regular intervals or specific times. This technique allows attackers to maintain access and execute commands without requiring direct interaction.
+- [Azure Automation Webhook Created](../rules/azure_activity_rules/azure_automation_webhook_created.yml)
+  - Detects when an Azure Automation webhook is created. A webhook uses a custom URL passed to Azure Automation along with a data payload specific to the runbook. Adversaries may exploit this capability to trigger runbooks containing malicious code for persistence or to execute unauthorized actions in the environment.
+- [Azure Device Code Authentication with Broker Client](../rules/azure_signin_rules/azure_device_code_broker_client.yml)
+  - Detects device code authentication using the Microsoft Broker Client application, which may indicate Primary Refresh Token (PRT) abuse. Device code flow allows adversaries to trick users into entering codes on attacker-controlled applications. When combined with Microsoft Broker Client (app ID 29d9ed98-a469-4536-ade2-f981bc1d605e), this may indicate PRT theft or replay attacks that bypass MFA and Conditional Access policies.
+- [Azure Diagnostic Settings Deleted](../rules/azure_activity_rules/azure_diagnostic_settings_deleted.yml)
+  - Detects when Azure diagnostic settings are deleted. Deleting diagnostic settings disables logging and monitoring, which is a common technique to hide malicious activity.
+- [Azure Disk Deleted](../rules/azure_activity_rules/azure_disk_deleted.yml)
+  - Detects when an Azure managed disk is deleted. Unauthorized disk deletion can indicate ransomware activity where attackers destroy data or delete backup disks to prevent recovery. This may also indicate legitimate cleanup operations.
+- [Azure Domain Federation Settings Modified](../rules/azure_signin_rules/azure_domain_trust_settings_modified.yml)
+  - Detects modifications to domain federation settings in Microsoft Entra ID, including changes to federation trust configurations and OIDC discovery endpoints. Adversaries who compromise administrative accounts may modify these settings to federate the tenant with attacker-controlled identity providers, enabling unauthorized access and MFA bypass. This technique allows attackers to establish persistent access by redirecting authentication to malicious infrastructure.
+- [Azure Event Hub Deleted](../rules/azure_activity_rules/azure_event_hub_deleted.yml)
+  - Detects when an Azure Event Hub is deleted. Event Hubs are critical event processing services that ingest and process large volumes of data for log collection, SIEM ingestion, and real-time analytics. Adversaries may delete Event Hubs to evade detection by disrupting data flows and erasing evidence of their malicious activities. Deletion of Event Hubs used for security logging can blind security teams to ongoing attacks.
+- [Azure Excessive Account Lockouts](../rules/azure_signin_rules/azure_excessive_account_lockouts.yml)
+  - Detects high volumes of failed Microsoft Entra ID sign-in attempts resulting in account lockouts, indicating potential brute-force credential attacks such as password spraying, password guessing, or credential stuffing. When adversaries repeatedly attempt authentication with incorrect credentials, Entra ID Smart Lockout policies trigger account lockouts (error code 50053).
+- [Azure Excessive IP and VM Discovery](../rules/azure_activity_rules/azure_network_ip_discovery.yml)
+  - Detects excessive read operations on Azure public IP addresses and virtual machines. Adversaries may enumerate public IPs and virtual machines to identify external attack surfaces, map network topology, and identify potential targets for exploitation. This reconnaissance pattern often precedes lateral movement attempts, privilege escalation, or targeted attacks. The threshold-based detection triggers when the same resource type is read excessively within a time window.
+- [Azure Excessive Network Security Group Read](../rules/azure_activity_rules/azure_network_port_mapping.yml)
+  - Detects excessive read operations on Azure Network Security Groups. Adversaries may repeatedly read Network Security Group configurations to map network ports and firewall rules as part of reconnaissance activities. This pattern can indicate an attacker attempting to understand network security controls before launching lateral movement or exfiltration attacks. The threshold-based detection triggers when the same resource is read excessively within a time window.
+- [Azure Firewall Policy Deleted](../rules/azure_activity_rules/azure_firewall_policy_deleted.yml)
+  - Detects when an Azure Firewall policy is deleted. Firewall policies define critical network security rules that control traffic flow and protect resources. Adversaries may delete firewall policies to disable network security controls, allow malicious traffic, or enable data exfiltration. This activity is a strong indicator of defense evasion or preparation for follow-on attacks.
+- [Azure High-Risk Sign-In](../rules/azure_signin_rules/azure_high_risk_signin.yml)
+  - Detects high-risk sign-in attempts flagged by Microsoft Entra ID Protection. These alerts indicate potential account compromise where Microsoft's machine learning has identified suspicious authentication patterns. High-risk sign-ins may result from credential theft, impossible travel, or unfamiliar locations.
 - [Azure Invite External Users](../rules/azure_signin_rules/azure_invite_external_users.yml)
   - This detection looks for a Azure users inviting external users
+- [Azure Key Vault Certificate Accessed](../rules/azure_activity_rules/azure_keyvault_certificate_accessed.yml)
+  - Detects when Azure Key Vault certificates are accessed via read operations. Adversaries may attempt to dump certificates to extract credentials for service principals or establish persistence through certificate-based authentication.
+- [Azure Key Vault Deleted](../rules/azure_activity_rules/azure_keyvault_deleted.yml)
+  - Detects when an Azure Key Vault is deleted. Key Vault deletion is a destructive operation that may indicate ransomware activity or malicious destruction of secrets and encryption keys.
+- [Azure Key Vault Key Accessed or Recovered](../rules/azure_activity_rules/azure_keyvault_key_accessed_or_recovered.yml)
+  - Detects when Azure Key Vault cryptographic keys are accessed via read operations or recovered/restored. Key Vault keys contain public key information used for encryption, decryption, and signing operations. While private keys cannot be directly exported from Key Vault, adversaries may access key metadata and properties to understand the encryption architecture, identify sensitive keys, or enumerate available cryptographic resources for targeted attacks.
+- [Azure Key Vault Key Permanently Purged](../rules/azure_activity_rules/azure_keyvault_key_purged.yml)
+  - Detects when an Azure Key Vault key is permanently purged. Purging a key is an irreversible operation that permanently destroys cryptographic keys. If done on an unrecognized key, it may indicate ransomware or malicious destruction.
+- [Azure Key Vault Permanently Purged](../rules/azure_activity_rules/azure_keyvault_purged.yml)
+  - Detects when an entire Azure Key Vault is permanently purged. Purging a Key Vault is an irreversible operation that permanently destroys all keys, secrets, and certificates stored within it. This is more destructive than deleting a vault and may indicate ransomware activity or malicious data destruction.
+- [Azure Key Vault Secret Accessed or Recovered](../rules/azure_activity_rules/azure_keyvault_secret_accessed_or_recovered.yml)
+  - Detects when Azure Key Vault secrets are accessed or when soft-deleted secrets are recovered. Recovering soft-deleted secrets may indicate an attacker attempting to extract previously deleted credentials.
+- [Azure Kubernetes RoleBinding or ClusterRoleBinding Created](../rules/azure_activity_rules/azure_kubernetes_rolebinding_created.yml)
+  - Detects when a RoleBinding or ClusterRoleBinding is created in Azure Kubernetes Service (AKS) or Arc-enabled Kubernetes clusters. Role bindings grant permissions to Kubernetes subjects (users, groups, or service accounts) by binding them to roles with specific permissions. Adversaries with appropriate access may create malicious role bindings to escalate privileges, assign cluster-admin roles, or maintain persistent access to the Kubernetes cluster. This detection applies to both AKS managed clusters and Arc-enabled connected clusters.
+- [Azure Log Analytics Workspace Deleted](../rules/azure_activity_rules/azure_log_analytics_workspace_deleted.yml)
+  - Detects when an Azure Log Analytics Workspace is deleted. Deleting a Log Analytics Workspace destroys centralized logging infrastructure and is a defense evasion technique.
 - [Azure Many Failed SignIns](../rules/azure_signin_rules/azure_failed_signins.yml)
   - This detection looks for a number of failed sign-ins for the same ServicePrincipalName or UserPrincipalName
 - [Azure MFA Disabled](../rules/azure_signin_rules/azure_mfa_disabled.yml)
   - This detection looks for MFA being disabled in conditional access policy
+- [Azure Microsoft Graph Single Session from Multiple IP Addresses](../rules/azure_signin_rules/azure_graph_session_multiple_ips.yml)
+  - Detects when a user signs in to Microsoft Entra ID and subsequently accesses Microsoft Graph from a different IP address using the same session ID. This behavior may indicate OAuth application abuse, session hijacking, token replay attacks, or adversary-in-the-middle attacks where an attacker has obtained a valid session token and is using it from their own infrastructure.
+- [Azure Network Packet Capture Enabled](../rules/azure_activity_rules/azure_network_packet_capture_enabled.yml)
+  - Detects when Azure's Network Watcher packet capture feature is activated.  Packet capture operations could enable threat actors to inspect unencrypted network traffic and potentially extract sensitive credentials or data. While packet capture is a legitimate network diagnostics tool, adversaries may abuse it to sniff credentials or intercept sensitive data in transit.
+- [Azure Network Security Configuration Modified or Deleted](../rules/azure_activity_rules/azure_nsg_deleted_or_modified.yml)
+  - Identifies when a network security configuration is modified or deleted. This includes Network Security Group (NSG) changes, security rule modifications, NSG joins to subnets/interfaces, and diagnostic settings changes. These actions may indicate defense evasion, persistence, or preparation for data exfiltration.
+- [Azure Network Watcher Deleted](../rules/azure_activity_rules/azure_network_watcher_deleted.yml)
+  - Detects when an Azure Network Watcher is deleted. Network Watcher is a regional service that enables monitoring and diagnostics for network resources in Azure, including packet capture, connection monitoring, flow logging, and network performance diagnostics. Adversaries may delete Network Watchers to disable network visibility and evade detection during lateral movement, data exfiltration, or other network-based attacks.
 - [Azure Policy Changed](../rules/azure_signin_rules/azure_policy_changed.yml)
   - This detection looks for policy changes in AuditLogs
+- [Azure Policy DeployIfNotExists Action Triggered](../rules/azure_activity_rules/azure_policy_deployifnotexists.yml)
+  - Detects when an Azure Policy with the DeployIfNotExists effect is triggered and executes a deployment. The DeployIfNotExists effect allows policies to automatically deploy resources when certain conditions are met. Adversaries may abuse this feature to establish persistence by creating policies that automatically deploy backdoors, malicious configurations, or unauthorized resources when specific conditions occur. This technique enables stealthy persistence as deployments appear to be legitimate policy enforcement actions.
+- [Azure Policy Violation Detected](../rules/azure_activity_rules/azure_policy_violation.yml)
+  - Detects when an Azure resource is found to be non-compliant with assigned Azure Policies. Policy violations indicate that resources do not meet organizational compliance requirements for security, networking, encryption, or other governance controls. Repeated violations may indicate configuration drift or potential security misconfigurations.
+- [Azure Privileged or Elevated Role Assignment](../rules/azure_activity_rules/azure_role_assignment_privileged_or_elevated.yml)
+  - Detects when a privileged or elevated Azure role is assigned. Privileged roles include Owner, Contributor, User Access Administrator, Security Admin, and other high-impact administrative roles. Elevated roles include resource-specific roles with significant permissions like Storage Blob Data Owner, Key Vault Administrator, etc.
+- [Azure Protection Multiple Alerts for User](../rules/azure_signin_rules/azure_multiple_protection_alerts.yml)
+  - Detects when a user account triggers multiple Microsoft Entra ID Protection risk alerts within a short time window, indicating a potentially ongoing attack or compromised account. Entra ID Protection uses machine learning and heuristics to detect risky sign-in activity including anonymous IP usage, atypical travel patterns, malware-linked IP addresses, unfamiliar sign-in properties, password spray attempts, leaked credentials, and other suspicious behaviors.
+- [Azure Resource Group Deleted](../rules/azure_activity_rules/azure_resource_group_deleted.yml)
+  - Detects when an Azure Resource Group is deleted. Resource group deletion removes all resources within the group and may indicate mass destruction or legitimate cleanup.
+- [Azure Restore Point Collection Deleted](../rules/azure_activity_rules/azure_restore_point_collection_deleted.yml)
+  - Detects when an Azure restore point collection is deleted. Restore point collections contain crash-consistent and application-consistent recovery points for virtual machines. Adversaries may delete these collections to prevent system recovery, destroy forensic evidence, or undermine backup strategies before launching ransomware attacks. This is a strong indicator of inhibiting system recovery capabilities.
 - [Azure RiskLevel Passthrough](../rules/azure_signin_rules/azure_risklevel_passthrough.yml)
   - This detection surfaces an alert based on riskLevelAggregated, riskLevelDuringSignIn, and riskState.riskLevelAggregated and riskLevelDuringSignIn are only expected for Azure AD Premium P2 customers.
 - [Azure Role Changed PIM](../rules/azure_signin_rules/azure_role_changed_pim.yml)
   - This detection looks for a change in member's PIM roles in EntraID
+- [Azure ROPC Login Attempt Without MFA](../rules/azure_signin_rules/azure_ropc_login_no_mfa.yml)
+  - Detects Resource Owner Password Credentials (ROPC) OAuth 2.0 authentication attempts in Microsoft Entra ID using single-factor authentication without MFA enforcement. ROPC is a deprecated legacy flow that allows applications to directly collect user credentials to obtain access tokens, bypassing modern authentication and MFA requirements. Adversaries commonly exploit ROPC during credential enumeration and password spraying campaigns using tools like TeamFiltration and MSOLSpray.
+- [Azure Serverless Script Execution](../rules/azure_activity_rules/azure_serverless_execution.yml)
+  - Detects when serverless resources execute PowerShell or Python scripts through Azure Automation runbook jobs or Azure Function Apps. Adversaries may abuse access to serverless resources to execute commands with inherited permissions from managed identities, RunAs accounts, or hybrid worker groups.
+- [Azure Service Principal Credentials Added](../rules/azure_signin_rules/azure_service_principal_credentials_added.yml)
+  - Detects when new credentials (client secrets or certificates) are added to Microsoft Entra ID service principals or applications. Service principals are identities used by applications, services, and automation tools to access Azure resources, and they authenticate using credentials such as client secrets or certificates. Adversaries who compromise administrative credentials may add rogue credentials to existing service principals to establish persistent access that bypasses multi-factor authentication (MFA) requirements, as service principal authentication uses client credentials rather than interactive user login.
 - [Azure SignIn via Legacy Authentication Protocol](../rules/azure_signin_rules/azure_legacyauth.yml)
   - This detection looks for Successful Logins that have used legacy authentication protocols
+- [Azure SQL Server Deleted](../rules/azure_activity_rules/azure_sql_server_deleted.yml)
+  - Detects when an Azure SQL Server is deleted. SQL Server deletion is a destructive operation that removes the entire database server instance and all databases within it.
+- [Azure Storage Account Blob Versioning Disabled](../rules/azure_activity_rules/azure_storage_account_versioning_disabled.yml)
+  - Detects when Azure storage account blob versioning is disabled. Disabling versioning removes protection against accidental deletion or modification and may indicate preparation for permanent data destruction.
+- [Azure Storage Account Deleted](../rules/azure_activity_rules/azure_storage_account_deleted.yml)
+  - Detects when an Azure storage account is deleted. Storage account deletion is a destructive operation that may indicate ransomware activity or malicious data destruction.
+- [Azure Storage Account HTTPS-Only Traffic Disabled](../rules/azure_activity_rules/azure_storage_https_only_disabled.yml)
+  - Detects when Azure storage account HTTPS-only traffic requirement is disabled. Disabling HTTPS-only allows unencrypted HTTP connections, which is a security downgrade that may expose data in transit.
+- [Azure Storage Account Key Regenerated](../rules/azure_activity_rules/azure_storage_account_key_regenerated.yml)
+  - Detects when an Azure storage account access key is regenerated. Key regeneration is a normal operational activity but may indicate an attacker attempting to maintain persistence or rotate credentials after compromise.
+- [Azure Storage Account Keys Listed](../rules/azure_activity_rules/azure_storage_account_keys_listed.yml)
+  - Detects when Azure Storage Account access keys are listed or retrieved. This operation returns the full access keys which could grant complete control over the storage account and all its data. Adversaries may list storage account keys to gain persistent access to blob containers, file shares, queues, and tables without needing to maintain their current permissions.
+- [Azure Storage Account Public Network Access Enabled](../rules/azure_activity_rules/azure_storage_account_public_network_access_enabled.yml)
+  - Detects when an existing Azure storage account's network settings are modified to enable public network access. This could indicate a potential data exfiltration risk or misconfiguration.
+- [Azure Storage Account Shared Key Access Enabled](../rules/azure_activity_rules/azure_storage_account_key_access_enabled.yml)
+  - Detects when an existing Azure storage account's shared key access is enabled (allowSharedKeyAccess: true). Shared key access uses storage account keys for authentication, which is less secure than Azure AD-based authentication.
+- [Azure Storage Blob Anonymous Access Enabled](../rules/azure_activity_rules/azure_storage_blob_anonymous_access_enabled.yml)
+  - Detects when Azure storage account blob anonymous access is enabled at the account level or when container public access is configured. Enabling anonymous access allows unauthenticated users to read blob data and may lead to data exposure.
+- [Azure Storage Blob Container Permissions Modified](../rules/azure_activity_rules/azure_storage_blob_permissions_modified.yml)
+  - Detects when permissions are modified on an Azure Storage blob container. Adversaries may modify container permissions to enable public access, grant unauthorized access, or prepare for data exfiltration. Changes to blob permissions can indicate attempts to access sensitive data, establish persistence through external access, or facilitate ransomware by modifying access controls before encryption.
+- [Azure Storage Blob CPK Encryption Detected](../rules/azure_activity_rules/azure_storage_blob_cpk_encryption_detected.yml)
+  - Detects when users attempt to access Azure Storage blobs that are encrypted with Customer-Provided Keys (CPK) but fail because they don't have the encryption key. This may indicate a ransomware operation that is using CPK encryption to hold data hostage, as legitimate users cannot access their own encrypted blobs without the attacker's key.
+- [Azure Storage Blob Deletion](../rules/azure_activity_rules/azure_storage_blob_bulk_deletion.yml)
+  - Detects when blobs are deleted from Azure Storage accounts via the DeleteBlob operation. Multiple deletion events in a short time frame may indicate ransomware activity, data destruction, or malicious insider activity. This rule fires on individual deletions and can be aggregated in Panther to detect bulk deletion patterns by configuring deduplication on storage account or caller IP address.
+- [Azure Storage Blob Soft Delete Disabled](../rules/azure_activity_rules/azure_storage_blob_soft_delete_disabled.yml)
+  - Detects when Azure storage account blob soft delete is disabled. Disabling soft delete removes protection against accidental deletion and may indicate preparation for data destruction.
+- [Azure Storage Blob Upload FOLLOWED BY CPK Encryption Error](../correlation_rules/azure_storage_cpk_ransomware.yml)
+  - Detects potential CPK-based ransomware attacks on Azure Storage by correlating blob uploads with subsequent Customer-Provided Key (CPK) encryption errors on the same blob path. This pattern indicates an attacker has encrypted blobs using CPK and legitimate users are now unable to access their data without the attacker's encryption key. This technique allows attackers to hold data hostage while maintaining access themselves, as only they possess the customer-provided encryption key needed to decrypt the blobs.
+- [Azure Storage Blob Uploaded](../rules/azure_activity_rules/azure_storage_blob_uploaded.yml)
+  - Tracks successful blob uploads to Azure Storage accounts.
+- [Azure Storage Container Soft Delete Disabled](../rules/azure_activity_rules/azure_storage_container_soft_delete_disabled.yml)
+  - Detects when Azure storage account container soft delete is disabled. Disabling container soft delete removes protection against accidental deletion and may indicate preparation for data destruction.
+- [Azure Storage File Share Created or Modified](../rules/azure_activity_rules/azure_storage_fileshare_modified.yml)
+  - Detects when an Azure Storage file share is created or modified. File shares can be mounted as network drives using SMB or NFS protocols, providing persistent access to storage. Adversaries may create or modify file shares to establish data exfiltration channels or mount shares to local systems for easier data transfer. While file share operations are common in legitimate scenarios, monitoring these activities helps establish baselines and identify unusual patterns that may indicate data exfiltration.
+- [Azure User Elevated to User Access Administrator Role](../rules/azure_signin_rules/azure_elevate_user_access_admin.yml)
+  - Detects when a user elevates their permissions to the "User Access Administrator" role in Azure, which grants full control over access management for Azure resources. The User Access Administrator role is one of the most powerful privileged roles in Azure, allowing the holder to manage user access to all Azure resources, assign roles to other users including administrative roles, and effectively control the entire Azure subscription's permission structure.
+- [Azure Virtual Machine Deleted](../rules/azure_activity_rules/azure_vm_deleted.yml)
+  - Detects when an Azure Virtual Machine is deleted. VM deletion may indicate normal deprovisioning or could be part of a larger attack pattern to disrupt services.
+- [Azure Virtual Network Deleted](../rules/azure_activity_rules/azure_virtual_network_deleted.yml)
+  - Detects when an Azure Virtual Network (VNet) is deleted. VNet deletion removes the entire network infrastructure and disconnects all resources within it, causing significant service disruption. This may indicate ransomware activity, sabotage, or unauthorized infrastructure destruction.
+- [Azure VM Command Executed](../rules/azure_activity_rules/azure_vm_command_executed.yml)
+  - Detects when commands are executed on Azure virtual machines through multiple execution methods including RunCommand, VM extensions (CustomScriptExtension, DSC), gallery applications, AKS command invoke, VMSS run commands, and serial console access. Adversaries may abuse these capabilities to  execute unauthorized commands, deploy malware, establish persistence, or move laterally within the environment.
+- [Azure VM Disk SAS URI Generated](../rules/azure_activity_rules/azure_vm_disk_sas_uri_generated.yml)
+  - Detects when a Shared Access Signature (SAS) URI is generated for an Azure VM disk. SAS URIs provide time-limited, unauthenticated access to download disk contents directly from Azure Storage. Adversaries can generate SAS URIs to exfiltrate entire virtual machine disks, including operating systems, applications, and all data. This allows offline analysis to extract credentials, secrets, and sensitive data without detection. This is a critical indicator of data exfiltration and should be investigated immediately.
+- [Azure VM Snapshot Deleted](../rules/azure_activity_rules/azure_vm_snapshot_deleted.yml)
+  - Detects when an Azure disk snapshot is deleted. Snapshots serve critical functions for backup, disaster recovery, and forensic analysis. Adversaries may target snapshots to prevent data recovery, destroy forensic evidence, or undermine backup strategies before launching ransomware or destructive operations.
+- [Azure VS Code OAuth Phishing](../rules/azure_signin_rules/azure_vscode_oauth_phishing.yml)
+  - Detects OAuth authorization flows where Visual Studio Code successfully authenticates to Microsoft Graph. While legitimate for developers, this pattern is commonly abused in phishing campaigns where attackers use the trusted VS Code client ID to trick users into granting OAuth tokens.
+- [Microsoft Entra ID Anomalous Application Consent](../queries/azure_queries/Entra_ID_Anomalous_Application_Consent_Query.yml)
+  - Detects anomalous OAuth application consent grants in Microsoft Entra ID where users approve permissions to applications they have not consented to in the past 14 days. Identifies potential OAuth phishing attacks where attackers trick users into granting malicious applications access to their accounts and organizational data.
+- [Microsoft Entra ID First Time Seen Device Code Authentication](../queries/azure_queries/Entra_ID_First_Time_Device_Code_Auth_Query.yml)
+  - Detects when users authenticate via device code flow for the first time in the past 14 days. Device code flow can be exploited through phishing attacks to steal tokens and impersonate victims.  This baseline detection helps identify new device code usage patterns that may indicate account compromise.
+- [Microsoft Entra ID Graph Email Access by Unusual Public Client](../queries/azure_queries/Entra_ID_Graph_Email_Access_Unusual_Public_Client_Query.yml)
+  - Detects when a public client application accesses email data via Microsoft Graph API  from an application the user has not used in the past 14 days.  This pattern can indicate OAuth phishing where attackers trick users into granting malicious applications access to read or send emails on their behalf.
 - [Sign In from Rogue State](../rules/standard_rules/sign_in_from_rogue_state.yml)
   - Detects when an entity signs in from a nation associated with cyber attacks
 
@@ -891,6 +1095,8 @@
   - Monitors for bots making HTTP Requests at a rate higher than 2req/sec
 - [Cloudflare L7 DDoS](../rules/cloudflare_rules/cloudflare_firewall_ddos.yml)
   - Layer 7 Distributed Denial of Service (DDoS) detected
+- [Cloudflare React2Shell RCE Attempt Detected](../rules/cloudflare_rules/cloudflare_react2shell_rce_attempt.yml)
+  - Detects React2Shell (CVE-2025-55182) RCE attempts blocked by Cloudflare WAF
 
 
 ## Crowdstrike
@@ -979,8 +1185,23 @@
 
 # D
 
+- [Docusign](#docusign)
 - [Dropbox](#dropbox)
 - [Duo](#duo)
+
+
+## Docusign
+
+- [DocuSign Envelope Corrected](../rules/docusign_rules/docusign_envelope_corrected.yml)
+  - Detects when a DocuSign envelope is corrected after being sent. Frequent corrections could indicate document tampering attempts, process abuse, or suspicious modification of legal documents. Monitor for patterns of correction behavior that may indicate fraud.
+- [DocuSign Envelope Voided](../rules/docusign_rules/docusign_envelope_voided.yml)
+  - Detects when a DocuSign envelope is voided. Frequent voiding of envelopes could indicate fraudulent activity, document tampering attempts, or process abuse. Monitor for patterns of voiding behavior.
+- [DocuSign Recipient Authentication Failure](../rules/docusign_rules/docusign_recipient_authentication_failure.yml)
+  - Detects when a DocuSign recipient fails authentication while attempting to access an envelope. This could indicate attempted unauthorized access to sensitive documents or credential compromise.
+- [DocuSign Recipient Declined Envelope](../rules/docusign_rules/docusign_recipient_declined.yml)
+  - Detects when a DocuSign recipient declines to sign an envelope. While often legitimate business activity, frequent declines or patterns of declines may indicate issues with document validity, recipient concerns about authenticity, or potential fraud attempts.
+- [DocuSign Template Management Activity](../rules/docusign_rules/docusign_template_management.yml)
+  - Detects DocuSign template management activities including creation, modification, and deletion. Template changes can affect business processes and should be monitored for unauthorized modifications. Deletions are particularly critical as they may indicate data destruction or process disruption.
 
 
 ## Dropbox
@@ -1055,6 +1276,8 @@
   - An access attempt violating VPC service controls (such as Perimeter controls) has been made.
 - [GCP BigQuery Large Scan](../rules/gcp_audit_rules/gcp_bigquery_large_scan.yml)
   - Detect any BigQuery query that is doing a very large scan (> 1 GB).
+- [GCP Cloud Armor RCE Attempt Detected](../rules/gcp_http_lb_rules/gcp_cloud_armor_r2s_rce_attempt.yml)
+  - Detects when GCP Cloud Armor detects HTTP requests matching specific Remote Code Execution (RCE) vulnerability signatures (google-mrs-v202512-id000001-rce and google-mrs-v202512-id000002-rce) which match React2Shell exploit attempts. These rules indicate active exploitation attempts against known RCE vulnerabilities.
 - [GCP Cloud Run Service Created](../rules/gcp_audit_rules/gcp_cloud_run_service_created.yml)
   - Detects creation of new Cloud Run Service, which, if configured maliciously, may be part of the attack aimed to invoke the service and retrieve the access token.
 - [GCP Cloud Run Service Created FOLLOWED BY Set IAM Policy](../correlation_rules/gcp_cloud_run_service_create_followed_by_set_iam_policy.yml)
@@ -1062,7 +1285,7 @@
 - [GCP Cloud Run Set IAM Policy](../rules/gcp_audit_rules/gcp_cloud_run_set_iam_policy.yml)
   - Detects new roles granted to users to Cloud Run Services. This could potentially allow the user to perform actions within the project and its resources, which could pose a security risk.
 - [GCP Cloud Storage Buckets Modified Or Deleted](../rules/gcp_audit_rules/gcp_cloud_storage_buckets_modified_or_deleted.yml)
-  - Detects GCP cloud storage bucket updates and deletes.
+  - Detects when a GCS bucket configuration is updated or deleted. Bucket configuration changes can be part of a ransomware attack, such as disabling security settings to prevent data recovery.
 - [GCP CloudBuild Potential Privilege Escalation](../rules/gcp_audit_rules/gcp_cloudbuild_potential_privilege_escalation.yml)
   - Detects privilege escalation attacks designed to gain access to the Cloud Build Service Account. A user with permissions to start a new build with Cloud Build can gain access to the Cloud Build Service Account and abuse it for more access to the environment.
 - [GCP cloudfunctions functions create](../rules/gcp_audit_rules/gcp_cloudfunctions_functions_create.yml)
@@ -1074,7 +1297,7 @@
 - [GCP Compute SSH Connection](../rules/gcp_audit_rules/gcp_compute_ssh_connection.yml)
   - Detect any SSH connections to a Compute Instance.
 - [GCP compute.instances.create Privilege Escalation](../rules/gcp_audit_rules/gcp_computeinstances_create_privilege_escalation.yml)
-  - Detects compute.instances.create method for privilege escalation in GCP.
+  - Detects compute.instances.create method for privilege escalation in GCP. This rule identifies when users create compute instances with service accounts that may lead to privilege escalation. Known good service accounts (GKE, Kubernetes, compute automation) are excluded to reduce false positives.
 - [GCP Corporate Email Not Used](../rules/gcp_audit_rules/gcp_iam_corp_email.yml)
   - Unexpected domain is being used instead of a corporate email
 - [GCP Destructive Queries](../rules/gcp_audit_rules/gcp_destructive_queries.yml)
@@ -1089,8 +1312,16 @@
   - This rule detects deletions of GCP firewall rules.
 - [GCP Firewall Rule Modified](../rules/gcp_audit_rules/gcp_firewall_rule_modified.yml)
   - This rule detects modifications to GCP firewall rules.
+- [GCP GCS Bulk Object Deletion](../rules/gcp_audit_rules/gcp_gcs_bulk_deletion.yml)
+  - Detects bulk deletion of GCS objects. This pattern is indicative of a ransomware attack or data destruction where an adversary deletes storage objects at scale. The threshold of 10+ deletion operations suggests automated bulk deletion rather than normal application behavior. This can be part of a double extortion ransomware attack where data is both encrypted and deleted to increase pressure on victims.
+- [GCP GCS Bulk Object Rewrite Operation](../rules/gcp_audit_rules/gcp_gcs_object_rewrite.yml)
+  - Detects GCS object rewrite operations which may indicate ransomware operations attempting to rewrite data in the same bucket with an attacker-controlled encryption key. Attackers with compromised credentials can use gsutil rewrite commands to replace existing encryption keys on cloud storage objects, effectively encrypting data for ransom. This detection focuses on identifying suspicious re-encryption activity through the 'gsutil rewrite -k' command patterns in user agent strings, with a threshold of 10 events.
 - [GCP GCS IAM Permission Changes](../rules/gcp_audit_rules/gcp_gcs_iam_changes.yml)
   - Monitoring changes to Cloud Storage bucket permissions may reduce time to detect and correct permissions on sensitive Cloud Storage bucket and objects inside the bucket.
+- [GCP GCS Object Copied to Different Bucket](../rules/gcp_audit_rules/gcp_gcs_object_exfiltration.yml)
+  - Detects when GCS objects are copied from one bucket to another bucket. This pattern can indicate data exfiltration where an adversary copies sensitive data to a bucket they control. The threshold of 10+ copy operations suggests bulk exfiltration rather than normal operations. This is detected by monitoring storage.objects.get operations that include a destination field in the metadata, indicating a copy operation.
+- [GCP GCS Ransom Note Upload](../rules/gcp_audit_rules/gcp_gcs_ransom_note_upload.yml)
+  - Detects when a file with a name matching common ransomware note patterns is uploaded to a Google Cloud Storage bucket. Ransomware attackers often leave ransom notes with distinctive filenames to provide victims with payment instructions.
 - [GCP GKE Kubernetes Cron Job Created Or Modified](../rules/gcp_k8s_rules/gcp_k8s_cron_job_created_or_modified.yml)
   - This detection monitor for any modifications or creations of a cron job in GKE. Attackers may create or modify an existing scheduled job in order to achieve cluster persistence.
 - [GCP IAM and Tag Enumeration](../rules/gcp_audit_rules/gcp_iam_tag_enumeration.yml)
@@ -1113,13 +1344,21 @@
 - [GCP K8s Pod Attached To Node Host Network](../rules/gcp_k8s_rules/gcp_k8s_pod_attached_to_node_host_network.yml)
   - This detection monitor for the creation of pods which are attached to the host's network. This allows a pod to listen to all network traffic for all deployed computer on that particular node and communicate with other compute on the network namespace. Attackers can use this to capture secrets passed in arguments or connections.
 - [GCP K8S Pod Create Or Modify Host Path Volume Mount](../rules/gcp_k8s_rules/gcp_k8s_pod_create_or_modify_host_path_vol_mount.yml)
-  - This detection monitors for pod creation with a hostPath volume mount. The attachment to a node's volume can allow for privilege escalation through underlying vulnerabilities or it can open up possibilities for data exfiltration or unauthorized file access. It is very rare to see this being a pod requirement.
+  - This detection monitors for pod creation with a hostPath volume mount. The attachment to a node's volume can allow for privilege escalation through underlying vulnerabilities or it can open up possibilities for data exfiltration or unauthorized file access. It is very rare to see this being a pod requirement. System service accounts in the kube-system namespace are excluded to prevent false positives from legitimate system components.
 - [GCP K8s Pod Using Host PID Namespace](../rules/gcp_k8s_rules/gcp_k8s_pod_using_host_pid_namespace.yml)
   - This detection monitors for any pod creation or modification using the host PID namespace. The Host PID namespace enables a pod and its containers to have direct access and share the same view as of the host’s processes. This can offer a powerful escape hatch to the underlying host.
 - [GCP K8S Privileged Pod Created](../rules/gcp_k8s_rules/gcp_k8s_privileged_pod_created.yml)
   - Alerts when a user creates privileged pod. These particular pods have full access to the host’s namespace and devices, have the ability to exploit the kernel, have dangerous linux capabilities, and can be a powerful launching point for further attacks. In the event of a successful container escape where a user is operating with root privileges, the attacker retains this role on the node.
 - [GCP K8S Service Type NodePort Deployed](../rules/gcp_k8s_rules/gcp_k8s_service_type_node_port_deployed.yml)
   - This detection monitors for any kubernetes service deployed with type node port. A Node Port service allows an attacker to expose a set of pods hosting the service to the internet by opening their port and redirecting traffic here. This can be used to bypass network controls and intercept traffic, creating a direct line to the outside network.
+- [GCP KMS Bulk Encryption by GCS Service Account](../rules/gcp_audit_rules/gcp_kms_bulk_encryption.yml)
+  - Detects bulk KMS encryption operations performed by the GCS service account. This pattern is indicative of a ransomware attack where an adversary directly calls the KMS Encrypt API using the GCS service account identity to encrypt data at scale, effectively holding data hostage. The threshold of 10+ encryption operations suggests automated bulk encryption rather than normal application behavior.
+- [GCP KMS Cross-Project Encryption](../rules/gcp_audit_rules/gcp_kms_cross_project_encryption.yml)
+  - Detects when a GCS service account in one project uses a KMS encryption key from a different project. This could indicate potential ransomware activity where an attacker is using their own KMS key to encrypt data in a victim's project, making it inaccessible without the attacker's key.
+- [GCP KMS Key Granted to GCS Service Account](../rules/gcp_audit_rules/gcp_kms_enable_key.yml)
+  - Detects when a KMS IAM policy grants encryption/decryption permissions to a GCS service account. This pattern may indicate a ransomware attack where an adversary grants a GCS service account access to KMS keys to enable encryption of cloud storage objects.
+- [GCP KMS Key Version Disabled or Destroyed](../rules/gcp_audit_rules/gcp_kms_erase_key.yml)
+  - Detects when a KMS key version is disabled, scheduled for destruction, or destroyed. Disabling or destroying KMS key versions can be used to deny access to encrypted data—a ransomware tactic where attackers disable keys to prevent victims from accessing their data.
 - [GCP Log Bucket or Sink Deleted](../rules/gcp_audit_rules/gcp_log_bucket_or_sink_deleted.yml)
   - This rule detects deletions of GCP Log Buckets or Sinks.
 - [GCP Logging Settings Modified](../rules/gcp_audit_rules/gcp_logging_settings_modified.yml)
@@ -1174,12 +1413,26 @@
   - A monitored github action has failed.
 - [GitHub Advanced Security Change WITHOUT Repo Archived](../correlation_rules/github_advanced_security_change_not_followed_by_repo_archived.yml)
   - Identifies when advances security change was made not to archive a repo. Eliminates false positives in the Advances Security Change Rule when the repo is archived.
+- [GitHub Artifact Download from Cross-Fork Workflow](../correlation_rules/github_artifact_download_from_forked_repo.yml)
+  - The "download artifacts" API, and various custom actions encapsulating it, doesn't differentiate between artifacts that were uploaded by forked repositories  and base repositories, which could lead privileged workflows to download artifacts that were created by forked repositories and that are potentially poisoned.
 - [GitHub Branch Protection Disabled](../rules/github_rules/github_branch_protection_disabled.yml)
   - Disabling branch protection controls could indicate malicious use of admin credentials in an attempt to hide activity.
 - [GitHub Branch Protection Policy Override](../rules/github_rules/github_branch_policy_override.yml)
   - Bypassing branch protection controls could indicate malicious use of admin credentials in an attempt to hide activity.
+- [GitHub Commits Skipping Workflows](../rules/github_rules/github_workflow_skip_commits.yml)
+  - Detects commits from cross-fork scenarios that contain workflow skip directives, which bypass GitHub Actions workflows. These skip patterns ([skip ci], [ci skip], [no ci], [skip actions], [actions skip], skip-checks:true) can be used to avoid security checks and CI/CD processes. This rule only alerts on commits to public forkable repositories.
+- [GitHub Cross-Fork Workflow Run](../rules/github_rules/github_crossfork_workflow_run.yml)
+  - Tracks workflows run in cross-fork pull requests.
 - [GitHub Dependabot Vulnerability Dismissed](../rules/github_rules/github_repo_vulnerability_dismissed.yml)
   - Creates an alert if a dependabot alert is dismissed without being fixed.
+- [GitHub Malicious Comment/Review Content](../rules/github_rules/github_malicious_comment_content.yml)
+  - Detects malicious patterns in GitHub comment and review content that could indicate bash injection attempts or social engineering attacks. This includes comments on issues, pull requests, and pull request reviews. While comments cannot directly execute code, they can be used to trick developers into running malicious commands. This rule detects command substitution patterns similar to those found in the Nx vulnerability (GHSA-cxm3-wv7p-598c).
+- [GitHub Malicious Commit Content](../rules/github_rules/github_malicious_commit_content.yml)
+  - Detects malicious patterns in GitHub commit content including commit messages, author names, and author emails. These fields can contain injection payloads that may be executed by vulnerable CI/CD workflows or git hooks. This rule is particularly important as commit metadata is often trusted and may be processed unsafely. Based on patterns from the Nx vulnerability (GHSA-cxm3-wv7p-598c).
+- [GitHub Malicious Issue/Pages Content](../rules/github_rules/github_malicious_issue_pages.yml)
+  - Detects malicious patterns in GitHub issue content (title and body) and GitHub wiki pages (page names) that could indicate bash injection attempts. This rule detects command substitution patterns similar to those found in the Nx vulnerability (GHSA-cxm3-wv7p-598c). Covers both issue events and Gollum (wiki) events.
+- [GitHub Malicious Pull Request Content](../rules/github_rules/github_malicious_pr_titles.yml)
+  - Detects malicious patterns in GitHub pull request content (title, body, head ref, head label, default branch) that could indicate bash injection attempts or other malicious activity. This rule is designed to catch attacks like the Nx vulnerability (GHSA-cxm3-wv7p-598c) where PR titles contained bash injection payloads that could be executed by vulnerable CI workflows. Lower severity for PRs that are not cross-fork.
 - [GitHub Org Authentication Method Changed](../rules/github_rules/github_org_auth_modified.yml)
   - Detects changes to GitHub org authentication changes.
 - [GitHub Org IP Allow List modified](../rules/github_rules/github_org_ip_allowlist.yml)
@@ -1188,6 +1441,12 @@
   - An application integration was installed to your organization's Github account by someone in your organization.
 - [Github Public Repository Created](../rules/github_rules/github_public_repository_created.yml)
   - A public Github repository was created.
+- [GitHub pull_request_target Workflow on Self-Hosted Runner](../correlation_rules/github_pull_request_target_with_self_hosted_runner.yml)
+  - Detects when a pull_request_target workflow runs on a self-hosted runner. pull_request_target workflows run with elevated privileges and have access to repository secrets even when triggered by external contributors from forks. When these workflows run on self-hosted runners attackers can gain direct code execution on the underlying infrastructure  with potential access to internal network, databases, and systems. Unlike GitHub-hosted runners which are destroyed after each job,  self-hosted runners persist and can be permanently compromised. This pattern is high risk regardless of whether the PR is cross-fork or same-repository because self-hosted runners represent infrastructure access. GitHub explicitly warns never to use self-hosted runners with public repositories or workflows that can be triggered by untrusted contributors. This configuration allows any GitHub user with read access to your repository to execute arbitrary code on your infrastructure.
+- [GitHub pull_request_target Workflow Usage](../rules/github_rules/github_pull_request_target_usage.yml)
+  - Detects usage of pull_request_target workflows, which run with elevated privileges and can access secrets even when triggered by external contributors from forks. These workflows pose security risks as they run in the context of the target repository rather than the fork, potentially allowing malicious code execution with write access and secrets. Low severity for non-cross-fork PRs.
+- [GitHub pull_request_target Workflow with Checkout Action](../correlation_rules/github_pull_request_target_with_checkout_in_workflow.yml)
+  - Detects when a pull_request_target workflow contains a checkout action, creating a potential security risk. pull_request_target workflows run with elevated privileges and have access to repository secrets even when triggered by external contributors from forks. When combined with a checkout action, this can create dangerous attack vectors. This is a well-known technique for supply chain compromise in GitHub Actions, often called a "pwn request".
 - [GitHub Repository Archived](../rules/github_rules/github_repo_archived.yml)
   - Detects when a repository is archived.
 - [GitHub Repository Collaborator Change](../rules/github_rules/github_repo_collaborator_change.yml)
@@ -1204,6 +1463,10 @@
   - GitHub detected a secret and created a secret scanning alert.
 - [GitHub Security Change, includes GitHub Advanced Security](../rules/github_rules/github_advanced_security_change.yml)
   - The rule alerts when GitHub Security tools (Dependabot, Secret Scanner, etc) are disabled.
+- [GitHub Sha1-Hulud Malicious Repository Created](../rules/github_rules/github_shai_hulud_repo_created.yml)
+  - Detects when a repository is created with the description "Sha1-Hulud: The Second Coming.", which is a known indicator of compromise associated with the Sha1-Hulud 2.0 campaign. Repos created with this description are typically indicators of an exfiltration attempt by the worm.
+- [GitHub Supply Chain - Software Installation Tool User Agents](../rules/github_rules/github_supply_chain_suspicious_user_agents.yml)
+  - Detects software installation tool user agents in GitHub audit logs that should never  directly access GitHub. Package managers like npm, pip, yarn, and system installers  operate at the registry level, not GitHub audit level. Their presence indicates: 1. Supply chain attacks using spoofed user agents to blend in 2. Compromised systems running installation tools with stolen GitHub tokens   3. Malicious automation disguised as legitimate package managersBased on analysis of GitHub audit logs showing zero legitimate npm/yarn/pip user agents, any such patterns are inherently suspicious and warrant immediate investigation.
 - [GitHub Team Modified](../rules/github_rules/github_team_modified.yml)
   - Detects when a team is modified in some way, such as adding a new team, deleting a team, modifying members, or a change in repository control.
 - [GitHub User Access Key Created](../rules/github_rules/github_user_access_key_created.yml)
@@ -1218,10 +1481,24 @@
   - Detects when a GitHub user role is upgraded to an admin or downgraded to a member
 - [GitHub Web Hook Modified](../rules/github_rules/github_webhook_modified.yml)
   - Detects when a webhook is added, modified, or deleted
+- [GitHub Workflow Contains Checkout Action](../rules/github_rules/github_workflow_contains_checkout.yml)
+  - Detects when a GitHub Actions workflow job contains a checkout step. The checkout action (actions/checkout) pulls repository code into the workflow runner. In certain contexts, especially with pull_request_target triggers or workflows with elevated permissions, checking out untrusted code can pose security risks. This detection helps identify workflows that interact with repository code for security review.
+- [GitHub Workflow Dispatched by GitHub Actions Bot](../rules/github_rules/github_workflow_dispatch_by_github_bot.yml)
+  - Detects when a GitHub App server-to-server token (GITHUB_TOKEN) triggers a workflow manually through the workflow_dispatch event, creating a new workflow run. This activity may indicate that a possibly previously exfiltrated GITHUB_TOKEN was subsequently used to authenticate to the GitHub REST API to trigger a workflow manually.  This technique has been observed as the last step in the attack chain of the Nx/S1ngularity supply chain attack.
+- [GitHub Workflow Downloading Artifacts](../rules/github_rules/github_workflow_artifact_download.yml)
+  - Detects when a GitHub Actions workflow downloads artifacts.
+- [GitHub Workflow Permissions Modified](../rules/github_rules/github_workflow_permission_modified.yml)
+  - Detects when the default workflow permissions for the GITHUB_TOKEN are modified at the organization level. GitHub Actions workflows use GITHUB_TOKEN for authentication, and changing these permissions can either expand or restrict what workflows can do by default. Unauthorized modifications could allow attackers to escalate privileges in CI/CD pipelines, potentially leading to supply chain compromise through malicious workflow modifications, unauthorized code deployments, or exfiltration of secrets. This is particularly concerning as it affects all repositories in the organization unless overridden at the repository level.
+- [GitHub Workflow Using Self-Hosted Runner](../rules/github_rules/github_self_hosted_runner_used.yml)
+  - Detects when a GitHub Actions workflow runs on a self-hosted runner.
 - [MFA Disabled](../rules/standard_rules/mfa_disabled.yml)
   - Detects when Multi-Factor Authentication (MFA) is disabled
+- [NX Supply Chain - S1ngularity Repository Detection](../queries/github_queries/nx_supply_chain_s1ngularity_repository_query.yml)
+  - https://github.com/nrwl/nx/security/advisories/GHSA-cxm3-wv7p-598cDetects GitHub activity associated with the NX supply chain compromise (CVE-2024-XXXX).The s1ngularity attack compromised popular NX build system packages affecting ~4M weekly downloads.Attack Details:- Malicious NPM packages published August 26-27, 2025 (22:32-03:37 UTC)- Created repositories: "s1ngularity-repository", "s1ngularity-repository-0/1" for data exfiltration- Targeted cryptocurrency wallets, SSH keys, GitHub/NPM tokens, .env files- Used triple base64 encoding to upload stolen credentials- First documented case of weaponizing AI CLI tools for reconnaissanceThis query detects repository creation, access, and API activity patterns consistent with the attack.
 - [Secret Exposed and not Quarantined](../correlation_rules/secret_exposed_and_not_quarantined.yml)
   - The rule detects when a GitHub Secret Scan detects an exposed secret, which is not followed by the expected quarantine operation in AWS.  When you make a repository public, or push changes to a public repository, GitHub always scans the code for secrets that match partner patterns. Public packages on the npm registry are also scanned. If secret scanning detects a potential secret, we notify the service provider who issued the secret. The service provider validates the string and then decides whether they should revoke the secret, issue a new secret, or contact you directly. Their action will depend on the associated risks to you or them.
+- [Sha1-Hulud V2 Filenames Added to Repository](../queries/github_queries/shai_hulud_filenames_in_repo.yml)
+  - This saved query detects filenames associated with the Sha1-Hulud worm 2.0 campaign, where malicious JS files are inserted into GitHub repositories to exfiltrate secrets.Attack details: - GitHub repositories get compromised via vulnerable workflows- Attackers are able to push their malicious code, contained in  filenames "setup_bun.js" and "bun_environment.js"- These files are responsible for exfiltrating cloud credentials, secrets and tokens.
 
 
 ## GitLab
@@ -1242,6 +1519,12 @@
   - An actor user was denied login access more times than the configured threshold.
 - [External GSuite File Share](../rules/gsuite_reports_rules/gsuite_drive_external_share.yml)
   - An employee shared a sensitive file externally with another organization
+- [GAIA GCPW Credential Theft Attack Chain](../correlation_rules/gaia_credential_theft_attack_chain.yml)
+  - Detects the GAIA (Google Account Information and Authentication) credential theftattack chain: credential dumping tool execution on Windows followed by anomalous GoogleWorkspace authentication. This pattern indicates an attacker has extracted OAuth refreshtokens from a Windows machine and is using them to authenticate to Google Workspace.
+- [Gmail Malicious SMTP Response](../rules/gsuite_activityevent_rules/gsuite_malicious_smtp_response.yml)
+  - Detects when Gmail blocks or rejects emails due to malicious SMTP response reasons including malware detection, spam/phishing links, low sender reputation, RBL listings, or denial of service attempts. This rule monitors inbound SMTP connections for security threats that Gmail's filters identify.
+- [Gmail Potential Spoofed Email Delivered](../rules/gsuite_activityevent_rules/gsuite_potential_spoofed_email.yml)
+  - Detects when a potentially spoofed email was successfully delivered to a user's inbox despite failing email authentication checks. This rule triggers when:1. DMARC authentication fails, OR 2. Both SPF and DKIM authentication fail simultaneouslyThese authentication failures indicate the sender may be impersonating a legitimate domain, which is a common tactic in phishing and business email compromise (BEC) attacks.
 - [Google Accessed a GSuite Resource](../rules/gsuite_activityevent_rules/gsuite_google_access.yml)
   - Google accessed one of your GSuite resources directly, most likely in response to a support incident.
 - [Google Drive High Download Count](../queries/gsuite_queries/gsuite_drive_many_docs_downloaded.yml)
@@ -1256,8 +1539,24 @@
   - A Google Workspace User configured a new domain application from the Google Workspace Apps Marketplace.
 - [Google Workspace Apps New Mobile App Installed](../rules/gsuite_activityevent_rules/google_workspace_apps_new_mobile_app_installed.yml)
   - A new mobile application was added to your organization's mobile apps whitelist in Google Workspace Apps.
+- [Google Workspace Login Type Anomaly](../queries/gsuite_queries/GSuite_Login_Type_Anomaly_Query.yml)
+  - Detects users authenticating with login types they haven't used in the past 30 days.May indicate GAIA credential theft where attackers use stolen tokens with differentauthentication methods than the victim's normal pattern (e.g., google_password instead of SAML).
 - [Google Workspace Many Docs Downloaded](../rules/gsuite_activityevent_rules/google_workspace_many_docs_downloaded.yml)
   - Checks whether a user has downloaded a large number of documents from Google Drive within a 5-minute period.
+- [Google Workspace OAuth Anomalous Privileged Request](../queries/gsuite_queries/GSuite_OAuth_Anomalous_Scope_Patterns_Query.yml)
+  - Detects new OAuth applications authorized with privileged scopes in Google Workspace.Uses anomaly detection to identify users authorizing OAuth apps they haven't used inthe past 7 days.
+- [Google Workspace OAuth Application Authorized with Privileged Scopes](../rules/gsuite_activityevent_rules/gsuite_oauth_privileged_scopes.yml)
+  - Detects when a user authorizes an OAuth application with privileged scopes in Google Workspace. Privileged scopes grant broad access to sensitive data and administrative functions.
+- [Google Workspace OAuth Token Requests from New IP](../queries/gsuite_queries/gsuite_oauth_token_new_ip_rule.yml)
+  - Alerts when users request OAuth tokens from IP addresses they haven't used in the past 30 days,with 3+ requests indicating active usage. This may indicate GAIA credential theft where attackersuse stolen refresh tokens to request access tokens from their infrastructure.
+- [Google Workspace OAuth Token Requests from New IPs](../queries/gsuite_queries/GSuite_OAuth_Token_New_IP_Query.yml)
+  - Detects users requesting OAuth tokens from IPv4 addresses they haven't used in the past 30 days,with 3+ requests indicating active usage. May indicate GAIA credential theft where attackers usestolen refresh tokens from their infrastructure.
+- [Google Workspace OAuthLogin Scope Anomalous Application Access](../queries/gsuite_queries/GSuite_OAuth_Login_Scope_Anomalous_Access_Query.yml)
+  - Detects apps requesting OAuth tokens with the OAuthLogin scope when they haven't requestedthis scope in the previous 14 days. This scope can be used to access Google's device passwordescrow endpoint for GAIA credential theft.
+- [Google Workspace Rapid Multi-IP Authentication](../queries/gsuite_queries/GSuite_Rapid_Multi_IP_Authentication_Query.yml)
+  - Detects users authenticating from 3+ distinct IPv4 addresses within 6 hours.May indicate GAIA credential theft where stolen OAuth tokens are used acrossmultiple compromised machines simultaneously. IPv6 addresses are excluded toavoid false positives from dual-stack networking.
+- [Gsuite Attachments Downloaded from Spam Email](../rules/gsuite_activityevent_rules/gsuite_attachments_downloaded_from_spam_email.yml)
+  - Detects when a user downloads or saves to Google Drive one or more attachments that are classified as spam.
 - [GSuite Calendar Has Been Made Public](../rules/gsuite_activityevent_rules/gsuite_calendar_made_public.yml)
   - A User or Admin Has Modified A Calendar To Be Public
 - [GSuite Device Suspicious Activity](../rules/gsuite_activityevent_rules/gsuite_mobile_device_suspicious_activity.yml)
@@ -1266,10 +1565,14 @@
   - A GSuite document's ownership was transferred to an external party.
 - [GSuite Drive Many Documents Deleted](../queries/gsuite_queries/gsuite_drive_many_docs_deleted.yml)
   - Scheduled rule for the GSuite Drive Many Documents Deleted query. Looks for users who have deleted more than 10 (tunable) documents the past day.
+- [Gsuite Email Bypassed Spam Filter](../rules/gsuite_activityevent_rules/gsuite_bypass_spam_filter_email.yml)
+  - Detects if an email received by a user has bypassed the organization's spam filter.
 - [GSuite External Drive Document](../rules/gsuite_reports_rules/gsuite_drive_visibility_change.yml)
   - A Google drive resource became externally accessible.
 - [GSuite Government Backed Attack](../rules/gsuite_activityevent_rules/gsuite_gov_attack.yml)
   - GSuite reported that it detected a government backed attack against your account.
+- [Gsuite Link Clicked in Spam Email](../rules/gsuite_activityevent_rules/gsuite_links_clicked_in_spam_email.yml)
+  - Detects when a user click links contained in a received email that is classified as spam.
 - [GSuite Login Type](../rules/gsuite_activityevent_rules/gsuite_login_type.yml)
   - A login of a non-approved type was detected for this user.
 - [Gsuite Mail forwarded to external domain](../rules/gsuite_activityevent_rules/gsuite_external_forwarding.yml)
@@ -1312,6 +1615,10 @@
   - A Workspace Admin Has Disabled The Enforcement Of Strong Passwords
 - [GSuite Workspace Trusted Domain Allowlist Modified](../rules/gsuite_activityevent_rules/gsuite_workspace_trusted_domains_allowlist.yml)
   - A Workspace Admin Has Modified The Trusted Domains List
+- [Malware Detected in Email](../rules/gsuite_activityevent_rules/gsuite_malware_in_email.yml)
+  - Detects when malware is found in an email received by a user. Identifies different malware families including known malicious programs, viruses, worms, harmful content, and unwanted content. Severity is dynamically assigned based on the malware type, with known malicious programs and viruses triggering high-severity alerts.
+- [Spam Email Surge](../rules/gsuite_activityevent_rules/gsuite_spam_email.yml)
+  - Detects a high number of spam emails received by a single user in a short timeframe. This could indicate the user's email has appeared in data leaks and is being targeted for spam.
 - [Suspicious GSuite Login](../rules/gsuite_activityevent_rules/gsuite_suspicious_logins.yml)
   - GSuite reported a suspicious login for this user.
 - [Suspicious is_suspicious tag](../rules/gsuite_activityevent_rules/gsuite_is_suspicious_tag.yml)
@@ -1321,7 +1628,9 @@
 # M
 
 - [Microsoft365](#microsoft365)
+- [MicrosoftDefenderXDR](#microsoftdefenderxdr)
 - [MicrosoftGraph](#microsoftgraph)
+- [MicrosoftIntune](#microsoftintune)
 - [MongoDB](#mongodb)
 
 
@@ -1337,10 +1646,26 @@
   - A user's MFA has been removed
 
 
+## MicrosoftDefenderXDR
+
+- [Defender Detection Passthrough](../rules/microsoft_defender_rules/defender_detection_passthrough.yml)
+  - Microsoft Defender has detected malicious activity. This activty could be on a host or on a connected platform such as Azure, Microsoft 365, or Intune.
+
+
 ## MicrosoftGraph
 
 - [Microsoft Graph Passthrough](../rules/microsoft_rules/microsoft_graph_passthrough.yml)
   - The Microsoft Graph security API federates queries to all onboarded security providers, including Azure AD Identity Protection, Microsoft 365, Microsoft Defender (Cloud, Endpoint, Identity) and Microsoft Sentinel
+
+
+## MicrosoftIntune
+
+- [Intune Create or Modify Client App](../rules/intune_rules/intune_create_modify_client_app.yml)
+  - Microsoft Intune allows administrators to deploy applications to devices as a means of remote management and configuration. This functionality can be abused by adversaries to deploy malicious executables to devices, thereby allowing adversaries to pivot from compromised accounts to endpoints. This detection identifies the creation of or changes to apps that are deployed to devices.
+- [Intune Device Not Compliant](../rules/intune_rules/intune_device_not_compliant.yml)
+  - Microsoft Intune allows administrators to manage devices and enforce compliance with established policies. This detection identifies devices that are not compliant with the established policies.
+- [Intune New Device Management Script](../rules/intune_rules/intune_new_device_management_script.yml)
+  - Microsoft Intune allows administrators to deploy scripts to devices as a means of remote management and configuration. These scripts, which can be executed by the local SYSTEM account, provides a powerful capability to managed devices. This functionality can be abused by adversaries to deploy malicious scripts to devices, thereby allowing adversaries to pivot from compromised accounts to endpoints. This detection identifies changes to device management scripts, to include creation, modification, and deletion of scripts.
 
 
 ## MongoDB
@@ -1435,6 +1760,7 @@
 - [Okta](#okta)
 - [OneLogin](#onelogin)
 - [OnePassword](#onepassword)
+- [OpenAI](#openai)
 - [Orca](#orca)
 - [Osquery](#osquery)
 
@@ -1595,6 +1921,24 @@
   - Detects when unusual or undesirable 1Password clients access your 1Password account
 
 
+## OpenAI
+
+- [OpenAI Admin Role Assignment](../rules/openai_rules/openai_admin_role_assignment.yml)
+  - Detects when an admin or owner role is assigned to a user or group in OpenAI.Admin and owner roles grant elevated privileges that allow significant control overthe organization, including managing users, API keys, billing, and security settings.Unauthorized or unexpected admin role assignments can indicate:- Privilege escalation attempts- Insider threats- Compromised administrator accounts- Policy violationsThis rule alerts on all admin role assignments for visibility and audit purposes.
+- [OpenAI Anomalous API Key Activity](../rules/openai_rules/openai_api_key_anomalous_activity.yml)
+  - Detects anomalous OpenAI API key activity indicative of potential key compromise,unauthorized access, or preparation for malicious misuse (e.g., C2, phishing, automation).OpenAI API keys provide programmatic access to powerful LLM capabilities. Abuse orcompromise of these keys enables attackers to blend malicious activity into legitimatecloud traffic, bypassing traditional network-based detections.This rule alerts on:- API keys created or updated with elevated or unrestricted permissions (all, models:write, organization:write, api_keys:write, admin)
+- [OpenAI Brute Force Login Success](../correlation_rules/openai_brute_force_login_success.yml)
+  - Detects successful credential stuffing or brute force attacks against OpenAI accounts.This rule identifies when a user account experiences 5 or more failed login attemptsfollowed by a successful login within 30 minutes. This pattern indicates:- Successful credential stuffing attack- Successful brute force attack- Compromised user credentials- Automated attack tools successfully gaining accessThe correlation is performed by matching on the user email address to track attemptsagainst the same account across multiple failed attempts and the eventual success.
+- [OpenAI Failed Login (Base Rule)](../rules/openai_rules/openai_login_failed.yml)
+  - Base rule for detecting OpenAI failed login attempts. This rule is used primarilyas a building block for correlation rules and does not generate alerts on its own.
+- [OpenAI IP Allowlist Configuration Changes](../rules/openai_rules/openai_ip_allowlist_changes.yml)
+  - Detects changes to OpenAI IP allowlist configurations including creation, updates,deletion, activation, and deactivation.IP allowlists restrict API and console access to specific IP addresses or CIDR ranges,providing network-level access control. Changes to IP allowlists can indicate:- Security control removal (deletion/deactivation) - CRITICAL- Addition of dangerous IPs like 0.0.0.0 (updates) - HIGH- Configuration changes for visibility (creation/activation) - MEDIUMUnauthorized modifications can expose the organization to unauthorized access,bypass network security controls, or indicate preparation for malicious activity.
+- [OpenAI SCIM Configuration Change](../rules/openai_rules/openai_scim_configuration_change.yml)
+  - Detects when SCIM (System for Cross-domain Identity Management) is enabled or disabledin an OpenAI organization.SCIM provides automated user provisioning and deprovisioning from identity providers (IdP)to OpenAI. Disabling SCIM can:- Bypass identity governance and access control policies- Allow orphaned accounts to persist after employee offboarding- Indicate an attempt to maintain unauthorized access- Violate compliance requirements for automated access managementEnabling SCIM should be monitored for visibility into identity integration changes.
+- [OpenAI Successful Login (Base Rule)](../rules/openai_rules/openai_login_success.yml)
+  - Base rule for detecting OpenAI successful login events. This rule is used primarilyas a building block for correlation rules and does not generate alerts on its own.
+
+
 ## Orca
 
 - [Orca Passthrough](../rules/orca_rules/orca_passthrough.yml)
@@ -1684,6 +2028,14 @@
 
 - [Salesforce Admin Login As User](../rules/salesforce_rules/salesforce_admin_login_as_user.yml)
   - Salesforce detection that alerts when an admin logs in as another user.
+- [Salesforce API Anomaly Detection (RET Passthrough)](../rules/salesforce_rules/salesforce_api_anomaly_passthrough.yml)
+  - Salesforce Real-Time Event Monitoring has detected anomalous API activity. This could indicate compromised credentials, automated abuse, data exfiltration attempts, or other suspicious API usage patterns.
+- [Salesforce Bulk API Data Exfiltration](../rules/salesforce_rules/salesforce_bulk_data_exfiltration.yml)
+  - Detects Salesforce Bulk API operations that could indicate data exfiltration attempts. The Bulk API allows users to process large volumes of records (up to millions) asynchronously, making it a common vector for data theft.This detection triggers on all Bulk API job completions and adjusts severity based on:- Operation type (query operations are highest risk for exfiltration)- Volume of records processed- Entity/object type being accessed
+- [Salesforce OAuth Credential Abuse Detection](../rules/salesforce_rules/salesforce_oauth_credential_abuse.yml)
+  - Detects OAuth credential abuse and suspicious token usage patterns in Salesforce. OAuth tokens provide API access and can be abused if compromised, making this detection critical for:- Stolen or leaked OAuth tokens- Token replay attacks- Excessive API usage indicating automated abuse- Failed token refresh attempts (potential brute force)- Unauthorized token revocationsThis detection triggers on OAuth-related security events and adjusts severity based on:- Token revocation events (may indicate compromise response)- Failed OAuth operations (potential attack attempts)- Excessive API usage patterns
+- [Salesforce Third-Party Integration Monitoring](../rules/salesforce_rules/salesforce_third_party_integration.yml)
+  - Monitors third-party integrations and OAuth connected apps accessing Salesforce. Connected apps use OAuth for authorization and can access data on behalf of users, making them a potential vector for:- Unauthorized data access- Shadow IT applications- Compromised OAuth tokens- Over-privileged integrationsThis detection triggers on connected app usage events and adjusts severity based on:- Connection type (refresh tokens are higher risk)- App authorization events- Suspicious app naming patterns
 
 
 ## SentinelOne
@@ -1758,7 +2110,7 @@
   - Monitor for malicious IPs interacting with Snowflake as part of ongoing cyber threat activity reported May 31st, 2024
 - [Snowflake Configuration Drift](../queries/snowflake_queries/snowflake_0108977_configuration_drift.yml)
   - Monitor for configuration drift made by malicious actors as part of ongoing cyber threat activity reported May 31st, 2024
-- [Snowflake Data Exfiltration](../correlation_rules/snowflake_data_exfiltration.yml)
+- [Snowflake Data Exfiltration](../correlation_rules/snowflake_data_exfiltration_streaming.yml)
   - In April 2024, Mandiant received threat intelligence on database records that were subsequently determined to have originated from a victim’s Snowflake instance. Mandiant notified the victim, who then engaged Mandiant to investigate suspected data theft involving their Snowflake instance. During this investigation, Mandiant determined that the organization’s Snowflake instance had been compromised by a threat actor using credentials previously stolen via infostealer malware. The threat actor used these stolen credentials to access the customer’s Snowflake instance and ultimately exfiltrate valuable data. At the time of the compromise, the account did not have multi-factor authentication (MFA) enabled.
 - [Snowflake External Data Share](../rules/snowflake_rules/snowflake_stream_external_shares.yml)
   - Detect when an external share has been initiated from one source cloud to another target cloud.
@@ -1923,7 +2275,16 @@
 
 # W
 
+- [Windows](#windows)
 - [Wiz](#wiz)
+
+
+## Windows
+
+- [GAIA GCPW Credential Theft Attack Chain](../correlation_rules/gaia_credential_theft_attack_chain.yml)
+  - Detects the GAIA (Google Account Information and Authentication) credential theftattack chain: credential dumping tool execution on Windows followed by anomalous GoogleWorkspace authentication. This pattern indicates an attacker has extracted OAuth refreshtokens from a Windows machine and is using them to authenticate to Google Workspace.
+- [Windows Credential Dumping Tool](../rules/microsoft_rules/windows_credential_dumping_tool.yml)
+  - Detects execution of tools commonly used for credential dumping on Windows systems. These tools can extract OAuth refresh tokens (GAIA), passwords, and authentication secrets from Windows memory (LSASS) and registry.
 
 
 ## Wiz
@@ -1936,10 +2297,14 @@
   - This rule detects updates and deletions of connectors.
 - [Wiz Data Classifier Updated Or Deleted](../rules/wiz_rules/wiz_data_classifier_updated_or_deleted.yml)
   - This rule detects updates and deletions of data classifiers.
+- [Wiz Defend Alert Passthrough Rule](../rules/wiz_rules/wiz_defend_passthrough.yml)
+  - This rule enriches and contextualizes security alerts generated by Wiz.
 - [Wiz Image Integrity Validator Updated Or Deleted](../rules/wiz_rules/wiz_image_integrity_validator_updated_or_deleted.yml)
   - This rule detects updates and deletions of image integrity validators.
 - [Wiz Integration Updated Or Deleted](../rules/wiz_rules/wiz_integration_updated_or_deleted.yml)
   - This rule detects updates and deletions of Wiz integrations.
+- [Wiz Issue Alert Passthrough Rule](../rules/wiz_rules/wiz_issue_alert_passthrough.yml)
+  - This rule enriches and contextualizes security alerts generated by Wiz.
 - [Wiz Issue Followed By SSH to EC2 Instance](../correlation_rules/wiz_issue_followed_by_ssh.yml)
   - Wiz detected a security issue with an EC2 instance followed by an SSH connection to the instance. This sequence could indicate a potential security breach.
 - [Wiz Revoke User Sessions](../rules/wiz_rules/wiz_revoke_user_sessions.yml)
@@ -2047,7 +2412,7 @@
 - [ZIA Logs Downloaded](../rules/zscaler_rules/zia/zia_logs_downloaded.yml)
   - This rule detects when ZIA Audit Logs were downloaded.
 - [ZIA Password Expiration](../rules/zscaler_rules/zia/zia_password_expiration.yml)
-  - This rule detects when password expiration eas set/removed.
+  - This rule detects when password expiration was set/removed.
 - [ZIA Trust Modification](../rules/zscaler_rules/zia/zia_trust_modification.yml)
   - This rule detects when SAML authentication was enabled/disabled.
 

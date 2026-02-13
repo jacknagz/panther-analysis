@@ -7,7 +7,7 @@ LogTypes:
   - GSuite.ActivityEvent
 Tags:
   - GSuite
-  - Beta
+Status: Experimental
 Severity: Info # Will be Medium in the future
 Description: >
   GSuite reported a suspicious activity for this user.
@@ -25,7 +25,7 @@ Tests:
         "kind": "admin#reports#activity",
         "type": "account_warning",
         "name": "login_success",
-        "parameters": { "affected_email_address": "bobert@ext.runpanther.io" },
+        "parameters": { "affected_email_address": "denethor@lotr.com" },
       }
 
   - Name: Login Success But Flagged Suspicious
@@ -34,7 +34,7 @@ Tests:
       {
         "id": { "applicationName": "login" },
         "actor": {
-          "email": bobert@ext.runpanther.io"},
+          "email": "bobert@ext.runpanther.io"},
         "kind": "admin#reports#activity",
         "type": "login",
         "name": "login_success",

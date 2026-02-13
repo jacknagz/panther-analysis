@@ -156,7 +156,7 @@ def rule(event):
 
     # Calculation is complete, write the current login to the cache
     # Only if non-VPN non-relay!
-    if not IS_PRIVATE_RELAY and not IS_VPN:
+    if not any((IS_VPN, IS_PRIVATE_RELAY, IS_SATELLITE_NETWORK)):
         put_string_set(
             key=CACHE_KEY,
             val=[dumps(new_login_stats)],
@@ -169,7 +169,11 @@ def rule(event):
     EVENT_CITY_TRACKING["speed_units"] = "km/h"
     EVENT_CITY_TRACKING["distance"] = int(distance)
     EVENT_CITY_TRACKING["distance_units"] = "km"
-
+    if deep_get(EVENT_CITY_TRACKING, "previous", "source_ip", default="<NO_PREV_IP>") == deep_get(
+        EVENT_CITY_TRACKING, "current", "source_ip", default="<NO_NEW_IP>"
+    ):
+        # Same IP address, no alert
+        return False
     return speed > 900  # Boeing 747 cruising speed
 
 
@@ -180,10 +184,12 @@ def title(event):
     new_city = deep_get(EVENT_CITY_TRACKING, "current", "city", default="<NO_PREV_CITY>")
     speed = deep_get(EVENT_CITY_TRACKING, "speed", default="<NO_SPEED>")
     distance = deep_get(EVENT_CITY_TRACKING, "distance", default="<NO_DISTANCE>")
+    old_ip = deep_get(EVENT_CITY_TRACKING, "previous", "source_ip", default="<NO_PREV_IP>")
+    new_ip = deep_get(EVENT_CITY_TRACKING, "current", "source_ip", default="<NO_NEW_IP>")
     return (
         f"Impossible Travel: [{event.udm('actor_user')}] "
         f"in [{log_source}] went [{speed}] km/h for [{distance}] km "
-        f"between [{old_city}] and [{new_city}]"
+        f"between [{old_city}/{old_ip}] and [{new_city}/{new_ip}]"
     )
 
 

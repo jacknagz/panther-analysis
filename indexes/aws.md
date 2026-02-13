@@ -70,7 +70,7 @@
   - This policy validates that CloudTrail S3 buckets are not publicly accessible.
 - [AWS CloudTrail SES Check Identity Verifications](../rules/aws_cloudtrail_rules/aws_cloudtrail_ses_check_identity_verifications.yml)
 - [AWS CloudTrail SES Check Send Quota](../rules/aws_cloudtrail_rules/aws_cloudtrail_ses_check_send_quota.yml)
-  - Detect when someone checks how many emails can be delivered via SES
+  - Detect when someone checks how many emails can be delivered via SES. Excludes automated checks from AWS Trusted Advisor to reduce false positives.
 - [AWS CloudTrail SES Check SES Sending Enabled](../rules/aws_cloudtrail_rules/aws_cloudtrail_ses_check_ses_sending_enabled.yml)
   - Detect when a user inquires whether SES Sending is enabled.
 - [AWS CloudTrail SES Enumeration](../rules/aws_cloudtrail_rules/aws_cloudtrail_ses_enumeration.yml)
@@ -147,6 +147,14 @@
   - This rule detects when multiple objects are deleted from an S3 bucket. Such actions can be indicative of unauthorized data deletion or other suspicious activities.
 - [AWS S3 Large Download](../queries/aws_queries/aws_s3_large_download_specific_bucket_query.yml)
   - Returns S3 GetObject events where a user has downloaded more than the configured threshold  of data within the specified time window. Supports filtering by bucket patterns and user types.
+- [AWS S3 Object Copied to External Account Bucket](../rules/aws_cloudtrail_rules/aws_s3_copy_object_to_external_account_bucket.yml)
+  - Detects when an S3 object is copied from one bucket to another bucket in a different AWS account. This could indicate data exfiltration or a ransomware attack where data is copied to an attacker-controlled account.
+- [AWS S3 Object Exfiltration FOLLOWED BY Object Deletion](../correlation_rules/aws_s3_exfiltration_and_deletion.yml)
+  - Detects a ransomware attack pattern where an attacker with compromised AWS credentials exfiltrates data from an S3 bucket to an external AWS account, followed by bulk deletion of objects from the source bucket within a short timeframe. This technique was notably used by the threat actor Bling Libra to extort victims by threatening data destruction or leaks.
+- [AWS S3 Ransomware Note Upload Detection](../rules/aws_cloudtrail_rules/aws_s3_ransomware_note_upload.yml)
+  - This rule detects when files with names commonly associated with ransomware notes are uploaded to S3 buckets. Ransomware attackers often drop ransom notes with distinctive filenames like HOW_TO_DECRYPT_FILES.txt, RANSOM_NOTE.txt, FILES_ENCRYPTED.html, or similar patterns to inform victims about the encryption and provide payment instructions.
+- [AWS S3 Security Controls Disabled](../correlation_rules/aws_s3_disable_security_controls.yml)
+  - Detects the disabling of multiple S3 security controls (logging, versioning and MFA delete protection) on the same bucket within a short timeframe. This pattern is a strong indicator of preparation for ransomware or data destruction attacks, as attackers typically disable recovery mechanisms before encrypting or deleting data. Alerting on this activity enables early intervention before actual data loss occurs.
 - [AWS SAML Activity](../rules/aws_cloudtrail_rules/aws_saml_activity.yml)
   - Identifies when SAML activity has occurred in AWS. An adversary could gain backdoor access via SAML.
 - [AWS Secrets Manager Batch Retrieve Secrets](../rules/aws_cloudtrail_rules/aws_secretsmanager_retrieve_secrets_batch.yml)
@@ -239,12 +247,12 @@
   - A user has subsequent logins from two geographic locations that are very far apart
 - [KMS CMK Disabled or Deleted](../rules/aws_cloudtrail_rules/aws_kms_cmk_loss.yml)
   - A KMS Customer Managed Key was disabled or scheduled for deletion. This could potentially lead to permanent loss of encrypted data.
+- [Lambda Code Updated by IAM User](../rules/aws_cloudtrail_rules/aws_overwrite_lambda_code.yml)
+  - Detects when Lambda function code is updated using direct IAM user credentials instead of assumed roles. This is unusual and may indicate: compromised IAM user credentials, a developer bypassing CI/CD guardrails, or insider threat activity. Modern best practice uses roles for programmatic access, making IAM user activity on Lambda code updates a high-confidence security signal.
+- [Lambda Configuration with Layers Updated by IAM User](../rules/aws_cloudtrail_rules/aws_add_malicious_lambda_extension.yml)
+  - Detects when Lambda function configuration is updated with layers using direct IAM user credentials instead of assumed roles. Lambda layers can execute code before the main function, making them a stealthy persistence mechanism. This is unusual and may indicate: compromised IAM user credentials, a developer bypassing CI/CD guardrails, or insider threat activity attempting to inject malicious layers.
 - [Lambda CRUD Actions](../rules/aws_cloudtrail_rules/aws_lambda_crud.yml)
   - Unauthorized lambda Create, Read, Update, or Delete event occurred.
-- [Lambda Update Function Code](../rules/aws_cloudtrail_rules/aws_overwrite_lambda_code.yml)
-  - Identifies when the code of a Lambda function is updated, which could indicate a potential security risk.
-- [Lambda Update Function Configuration with Layers](../rules/aws_cloudtrail_rules/aws_add_malicious_lambda_extension.yml)
-  - Identifies when a Lambda function configuration is updated with layers, which could indicate a potential security risk.
 - [Logins Without MFA](../rules/aws_cloudtrail_rules/aws_console_login_without_mfa.yml)
   - A console login was made without multi-factor authentication.
 - [Logins Without SAML](../rules/aws_cloudtrail_rules/aws_console_login_without_saml.yml)
@@ -271,6 +279,20 @@
   - Detects S3 data access through VPC endpoints from external/public IP addresses, which could indicate data exfiltration attempts.This rule can be customized with the following overrides:- S3_DATA_ACCESS_OPERATIONS: List of S3 operations to monitor
 - [S3 Bucket Deleted](../rules/aws_cloudtrail_rules/aws_s3_bucket_deleted.yml)
   - A S3 Bucket, Policy, or Website was deleted
+- [S3 Bucket Encryption Deleted](../rules/aws_cloudtrail_rules/aws_s3_delete_bucket_encryption.yml)
+  - Detects when S3 bucket encryption configuration is deleted, which could expose data to unauthorized access or indicate ransomware preparation activity.
+- [S3 Bucket Logging Disabled](../rules/aws_cloudtrail_rules/aws_s3_disable_bucket_logging.yml)
+  - Detects when server access logging is disabled on an S3 bucket, removing audit trail capabilities that could indicate ransomware preparation activity or an attempt to evade detection.
+- [S3 Bucket Replication Deleted](../rules/aws_cloudtrail_rules/aws_s3_delete_bucket_replication.yml)
+  - Detects when S3 bucket replication configuration is deleted, which could prevent data backup and indicate ransomware preparation activity.
+- [S3 Bucket Versioning Suspended](../rules/aws_cloudtrail_rules/aws_s3_suspend_versioning.yml)
+  - Detects when S3 bucket versioning is suspended or disabled, which removes the ability to recover previous versions of objects and is a common precursor to ransomware attacks or data destruction.
+- [S3 MFA Delete Disabled](../rules/aws_cloudtrail_rules/aws_s3_disable_mfa_delete.yml)
+  - Detects when MFA Delete is disabled on an S3 bucket, removing an important security control that prevents accidental or malicious deletion of versioned objects and could indicate ransomware preparation activity.
+- [S3 Object Encrypted with External KMS Key](../rules/aws_cloudtrail_rules/aws_s3_copy_object_cross_account_kms.yml)
+  - Detects when an S3 object is copied with a KMS key belonging to an account ID different than the bucket owner's account ID. This technique is used in S3 ransomware attacks where attackers encrypt objects with their own KMS key from an attacker-controlled AWS account, making the data inaccessible to the original owner. This is often a precursor to ransom demands or permanent data loss.
+- [S3 Public Access Block Deleted](../rules/aws_cloudtrail_rules/aws_s3_delete_public_access_block.yml)
+  - Detects when S3 bucket public access block configuration is deleted, which could allow unauthorized public access to sensitive data or indicate preparation for data exfiltration.
 - [Secret Exposed and not Quarantined](../correlation_rules/secret_exposed_and_not_quarantined.yml)
   - The rule detects when a GitHub Secret Scan detects an exposed secret, which is not followed by the expected quarantine operation in AWS.  When you make a repository public, or push changes to a public repository, GitHub always scans the code for secrets that match partner patterns. Public packages on the npm registry are also scanned. If secret scanning detects a potential secret, we notify the service provider who issued the secret. The service provider validates the string and then decides whether they should revoke the secret, issue a new secret, or contact you directly. Their action will depend on the associated risks to you or them.
 - [Sensitive API Calls Via VPC Endpoint](../rules/aws_cloudtrail_rules/aws_vpce_sensitive_api_calls.yml)
@@ -659,5 +681,11 @@
   - This policy validates that all WAF's have the correct rule ordering. Incorrect rule ordering could lead to less restrictive rules being matched and allowing traffic through before more restrictive rules that should have blocked the traffic.
 - [AWS WAF WebACL Has Associated Resources](../policies/aws_waf_policies/aws_waf_webacl_has_associated_resources.yml)
   - This policy ensures that AWS WAF WebACLs are associated with at least one resource (ALB, CloudFront Distribution, or API Gateway). If a WebACL is not associated with any resources, it is inactive and not providing any protection.
+
+
+## AWS WAFWebACL
+
+- [AWS WAF ReactJS RCE Attempt via Body](../rules/aws_waf_rules/aws_waf_reactjsrce_body.yml)
+  - Detects AWS WAF ReactJSRCE_BODY managed rule matches indicating React2Shell (CVE-2025-55182) ReactJS RCE attempts via HTTP body. Monitors all WAF sources: ALB, CloudFront, API Gateway, AppSync.
 
 

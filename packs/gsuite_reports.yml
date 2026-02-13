@@ -1,5 +1,5 @@
 AnalysisType: pack
-PackID: PantherManaged.GSuite.Reports
+PackID: PantherManaged.GSuite.ActivityEvent
 Description: Panther GSuite Detections
 PackDefinition:
   IDs:
@@ -8,11 +8,9 @@ PackDefinition:
     - Google.Workspace.Apps.Marketplace.Allowlist
     - Google.Workspace.Apps.Marketplace.New.Domain.Application
     - Google.Workspace.Apps.New.Mobile.App.Installed
-    - Google.Workspace.ManyDocsDownloaded
     - GSuite.AdvancedProtection
     - GSuite.CalendarMadePublic
     - GSuite.Drive.Many.Documents.Deleted
-    - Google.Drive.High.Download.Count
     - GSuite.GoogleAccess
     - GSuite.GovernmentBackedAttack
     - GSuite.GroupBannedUser
@@ -20,7 +18,6 @@ PackDefinition:
     - GSuite.DeviceCompromise
     - GSuite.DeviceUnlockFailure
     - GSuite.DeviceSuspiciousActivity
-    - GSuite.IsSuspiciousTag
     - GSuite.Rule
     - GSuite.SuspiciousLogins
     - GSuite.TwoStepVerification
@@ -35,7 +32,7 @@ PackDefinition:
     - GSuite.Workspace.TrustedDomainsAllowlist
     - GSuite.DriveOverlyVisible
     # Data Models used in these detections
-    - Standard.GSuite.Reports
+    - Standard.GSuite.ActivityEvent
     # Globals used in these detections
     - panther_base_helpers
     - panther_gsuite_helpers
@@ -44,4 +41,8 @@ PackDefinition:
     # Queries
     - GSuite Many Docs Deleted Query
     - GSuite Many Docs Downloaded Query
+    - Google Workspace Login Type Anomaly
+    - Google Workspace Rapid Multi-IP Authentication
+    - Google Workspace OAuthLogin Scope Anomalous Application Access
+    - Google Workspace OAuth Token Requests from New IPs
 DisplayName: "Panther GSuite Pack"

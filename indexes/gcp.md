@@ -10,6 +10,8 @@
   - An access attempt violating VPC service controls (such as Perimeter controls) has been made.
 - [GCP BigQuery Large Scan](../rules/gcp_audit_rules/gcp_bigquery_large_scan.yml)
   - Detect any BigQuery query that is doing a very large scan (> 1 GB).
+- [GCP Cloud Armor RCE Attempt Detected](../rules/gcp_http_lb_rules/gcp_cloud_armor_r2s_rce_attempt.yml)
+  - Detects when GCP Cloud Armor detects HTTP requests matching specific Remote Code Execution (RCE) vulnerability signatures (google-mrs-v202512-id000001-rce and google-mrs-v202512-id000002-rce) which match React2Shell exploit attempts. These rules indicate active exploitation attempts against known RCE vulnerabilities.
 - [GCP Cloud Run Service Created](../rules/gcp_audit_rules/gcp_cloud_run_service_created.yml)
   - Detects creation of new Cloud Run Service, which, if configured maliciously, may be part of the attack aimed to invoke the service and retrieve the access token.
 - [GCP Cloud Run Service Created FOLLOWED BY Set IAM Policy](../correlation_rules/gcp_cloud_run_service_create_followed_by_set_iam_policy.yml)
@@ -17,7 +19,7 @@
 - [GCP Cloud Run Set IAM Policy](../rules/gcp_audit_rules/gcp_cloud_run_set_iam_policy.yml)
   - Detects new roles granted to users to Cloud Run Services. This could potentially allow the user to perform actions within the project and its resources, which could pose a security risk.
 - [GCP Cloud Storage Buckets Modified Or Deleted](../rules/gcp_audit_rules/gcp_cloud_storage_buckets_modified_or_deleted.yml)
-  - Detects GCP cloud storage bucket updates and deletes.
+  - Detects when a GCS bucket configuration is updated or deleted. Bucket configuration changes can be part of a ransomware attack, such as disabling security settings to prevent data recovery.
 - [GCP CloudBuild Potential Privilege Escalation](../rules/gcp_audit_rules/gcp_cloudbuild_potential_privilege_escalation.yml)
   - Detects privilege escalation attacks designed to gain access to the Cloud Build Service Account. A user with permissions to start a new build with Cloud Build can gain access to the Cloud Build Service Account and abuse it for more access to the environment.
 - [GCP cloudfunctions functions create](../rules/gcp_audit_rules/gcp_cloudfunctions_functions_create.yml)
@@ -29,7 +31,7 @@
 - [GCP Compute SSH Connection](../rules/gcp_audit_rules/gcp_compute_ssh_connection.yml)
   - Detect any SSH connections to a Compute Instance.
 - [GCP compute.instances.create Privilege Escalation](../rules/gcp_audit_rules/gcp_computeinstances_create_privilege_escalation.yml)
-  - Detects compute.instances.create method for privilege escalation in GCP.
+  - Detects compute.instances.create method for privilege escalation in GCP. This rule identifies when users create compute instances with service accounts that may lead to privilege escalation. Known good service accounts (GKE, Kubernetes, compute automation) are excluded to reduce false positives.
 - [GCP Corporate Email Not Used](../rules/gcp_audit_rules/gcp_iam_corp_email.yml)
   - Unexpected domain is being used instead of a corporate email
 - [GCP Destructive Queries](../rules/gcp_audit_rules/gcp_destructive_queries.yml)
@@ -44,8 +46,16 @@
   - This rule detects deletions of GCP firewall rules.
 - [GCP Firewall Rule Modified](../rules/gcp_audit_rules/gcp_firewall_rule_modified.yml)
   - This rule detects modifications to GCP firewall rules.
+- [GCP GCS Bulk Object Deletion](../rules/gcp_audit_rules/gcp_gcs_bulk_deletion.yml)
+  - Detects bulk deletion of GCS objects. This pattern is indicative of a ransomware attack or data destruction where an adversary deletes storage objects at scale. The threshold of 10+ deletion operations suggests automated bulk deletion rather than normal application behavior. This can be part of a double extortion ransomware attack where data is both encrypted and deleted to increase pressure on victims.
+- [GCP GCS Bulk Object Rewrite Operation](../rules/gcp_audit_rules/gcp_gcs_object_rewrite.yml)
+  - Detects GCS object rewrite operations which may indicate ransomware operations attempting to rewrite data in the same bucket with an attacker-controlled encryption key. Attackers with compromised credentials can use gsutil rewrite commands to replace existing encryption keys on cloud storage objects, effectively encrypting data for ransom. This detection focuses on identifying suspicious re-encryption activity through the 'gsutil rewrite -k' command patterns in user agent strings, with a threshold of 10 events.
 - [GCP GCS IAM Permission Changes](../rules/gcp_audit_rules/gcp_gcs_iam_changes.yml)
   - Monitoring changes to Cloud Storage bucket permissions may reduce time to detect and correct permissions on sensitive Cloud Storage bucket and objects inside the bucket.
+- [GCP GCS Object Copied to Different Bucket](../rules/gcp_audit_rules/gcp_gcs_object_exfiltration.yml)
+  - Detects when GCS objects are copied from one bucket to another bucket. This pattern can indicate data exfiltration where an adversary copies sensitive data to a bucket they control. The threshold of 10+ copy operations suggests bulk exfiltration rather than normal operations. This is detected by monitoring storage.objects.get operations that include a destination field in the metadata, indicating a copy operation.
+- [GCP GCS Ransom Note Upload](../rules/gcp_audit_rules/gcp_gcs_ransom_note_upload.yml)
+  - Detects when a file with a name matching common ransomware note patterns is uploaded to a Google Cloud Storage bucket. Ransomware attackers often leave ransom notes with distinctive filenames to provide victims with payment instructions.
 - [GCP GKE Kubernetes Cron Job Created Or Modified](../rules/gcp_k8s_rules/gcp_k8s_cron_job_created_or_modified.yml)
   - This detection monitor for any modifications or creations of a cron job in GKE. Attackers may create or modify an existing scheduled job in order to achieve cluster persistence.
 - [GCP IAM and Tag Enumeration](../rules/gcp_audit_rules/gcp_iam_tag_enumeration.yml)
@@ -68,13 +78,21 @@
 - [GCP K8s Pod Attached To Node Host Network](../rules/gcp_k8s_rules/gcp_k8s_pod_attached_to_node_host_network.yml)
   - This detection monitor for the creation of pods which are attached to the host's network. This allows a pod to listen to all network traffic for all deployed computer on that particular node and communicate with other compute on the network namespace. Attackers can use this to capture secrets passed in arguments or connections.
 - [GCP K8S Pod Create Or Modify Host Path Volume Mount](../rules/gcp_k8s_rules/gcp_k8s_pod_create_or_modify_host_path_vol_mount.yml)
-  - This detection monitors for pod creation with a hostPath volume mount. The attachment to a node's volume can allow for privilege escalation through underlying vulnerabilities or it can open up possibilities for data exfiltration or unauthorized file access. It is very rare to see this being a pod requirement.
+  - This detection monitors for pod creation with a hostPath volume mount. The attachment to a node's volume can allow for privilege escalation through underlying vulnerabilities or it can open up possibilities for data exfiltration or unauthorized file access. It is very rare to see this being a pod requirement. System service accounts in the kube-system namespace are excluded to prevent false positives from legitimate system components.
 - [GCP K8s Pod Using Host PID Namespace](../rules/gcp_k8s_rules/gcp_k8s_pod_using_host_pid_namespace.yml)
   - This detection monitors for any pod creation or modification using the host PID namespace. The Host PID namespace enables a pod and its containers to have direct access and share the same view as of the host’s processes. This can offer a powerful escape hatch to the underlying host.
 - [GCP K8S Privileged Pod Created](../rules/gcp_k8s_rules/gcp_k8s_privileged_pod_created.yml)
   - Alerts when a user creates privileged pod. These particular pods have full access to the host’s namespace and devices, have the ability to exploit the kernel, have dangerous linux capabilities, and can be a powerful launching point for further attacks. In the event of a successful container escape where a user is operating with root privileges, the attacker retains this role on the node.
 - [GCP K8S Service Type NodePort Deployed](../rules/gcp_k8s_rules/gcp_k8s_service_type_node_port_deployed.yml)
   - This detection monitors for any kubernetes service deployed with type node port. A Node Port service allows an attacker to expose a set of pods hosting the service to the internet by opening their port and redirecting traffic here. This can be used to bypass network controls and intercept traffic, creating a direct line to the outside network.
+- [GCP KMS Bulk Encryption by GCS Service Account](../rules/gcp_audit_rules/gcp_kms_bulk_encryption.yml)
+  - Detects bulk KMS encryption operations performed by the GCS service account. This pattern is indicative of a ransomware attack where an adversary directly calls the KMS Encrypt API using the GCS service account identity to encrypt data at scale, effectively holding data hostage. The threshold of 10+ encryption operations suggests automated bulk encryption rather than normal application behavior.
+- [GCP KMS Cross-Project Encryption](../rules/gcp_audit_rules/gcp_kms_cross_project_encryption.yml)
+  - Detects when a GCS service account in one project uses a KMS encryption key from a different project. This could indicate potential ransomware activity where an attacker is using their own KMS key to encrypt data in a victim's project, making it inaccessible without the attacker's key.
+- [GCP KMS Key Granted to GCS Service Account](../rules/gcp_audit_rules/gcp_kms_enable_key.yml)
+  - Detects when a KMS IAM policy grants encryption/decryption permissions to a GCS service account. This pattern may indicate a ransomware attack where an adversary grants a GCS service account access to KMS keys to enable encryption of cloud storage objects.
+- [GCP KMS Key Version Disabled or Destroyed](../rules/gcp_audit_rules/gcp_kms_erase_key.yml)
+  - Detects when a KMS key version is disabled, scheduled for destruction, or destroyed. Disabling or destroying KMS key versions can be used to deny access to encrypted data—a ransomware tactic where attackers disable keys to prevent victims from accessing their data.
 - [GCP Log Bucket or Sink Deleted](../rules/gcp_audit_rules/gcp_log_bucket_or_sink_deleted.yml)
   - This rule detects deletions of GCP Log Buckets or Sinks.
 - [GCP Logging Settings Modified](../rules/gcp_audit_rules/gcp_logging_settings_modified.yml)

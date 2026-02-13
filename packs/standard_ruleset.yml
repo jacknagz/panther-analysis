@@ -12,7 +12,7 @@ PackDefinition:
     - Standard.Box.Event
     - Standard.GCP.AuditLog
     - Standard.Github.Audit
-    - Standard.GSuite.Reports
+    - Standard.GSuite.ActivityEvent
     - Standard.Notion.AuditLogs
     - Standard.Okta.SystemLog
     - Standard.OneLogin.Events
@@ -29,7 +29,6 @@ PackDefinition:
     - Standard.MFADisabled
     - Standard.NewAWSAccountCreated
     - Standard.NewUserAccountCreated
-    - Standard.SignInFromRogueState
     # Global Helpers
     - panther_base_helpers
     - panther_aws_helpers
