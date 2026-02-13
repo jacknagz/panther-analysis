@@ -1,0 +1,92 @@
+AnalysisType: rule
+Filename: okta_admin_disabled_mfa_custom.py
+RuleID: "Okta.Global.MFA.Disabled.Custom"
+DisplayName: "Okta MFA Globally Disabled"
+Enabled: true
+LogTypes:
+  - Okta.SystemLog
+Tags:
+  - custom
+  - compliance.soc2
+  - mitre.ta0005.defense_evasion
+  - mitre.t1556.modify_authentication_process
+  - usecase.configuration_management
+  - asset.identity_management
+  - impact.integrity
+  - impact.confidentiality
+  - risk.high
+Reports:
+  MITRE ATT&CK:
+    - TA0005:T1556
+Severity: High
+Description: An admin user has disabled the MFA requirement for your Okta account
+Reference: https://help.okta.com/oie/en-us/content/topics/identity-engine/authenticators/about-authenticators.htm
+Runbook: |
+  1. Confirm with the admin (actor.alternateId) whether the MFA deactivation was authorized and review the associated change ticket
+  2. Query Okta SystemLog for all system.mfa.factor events in the 24 hours surrounding this alert to identify the scope of MFA changes
+  3. Check for any suspicious sign-in activity across the organization in the 6 hours following MFA deactivation
+DedupPeriodMinutes: 15
+SummaryAttributes:
+  - eventType
+  - severity
+  - displayMessage
+  - p_any_ip_addresses
+Tests:
+  - Name: MFA Disabled
+    ExpectedResult: true
+    Log:
+      {
+        "published": "2022-03-22 14:21:53.225",
+        "eventType": "system.mfa.factor.deactivate",
+        "version": "0",
+        "severity": "HIGH",
+        "actor":
+          {
+            "alternateId": "homer@springfield.gov",
+            "displayName": "Homer Simpson",
+            "id": "111111",
+            "type": "User",
+          },
+        "client":
+          {
+            "device": "Computer",
+            "ipAddress": "1.1.1.1",
+            "userAgent":
+              {
+                "browser": "CHROME",
+                "os": "Mac OS X",
+                "rawUserAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/99.0.4844.83 Safari/537.36",
+              },
+            "zone": "null",
+          },
+        "p_log_type": "Okta.SystemLog",
+      }
+  - Name: Login Event
+    ExpectedResult: False
+    Log:
+      {
+        "published": "2022-03-22 14:21:53.225",
+        "eventType": "user.session.start",
+        "version": "0",
+        "severity": "INFO",
+        "actor":
+          {
+            "alternateId": "homer@springfield.gov",
+            "displayName": "Homer Simpson",
+            "id": "111111",
+            "type": "User",
+          },
+        "client":
+          {
+            "device": "Computer",
+            "ipAddress": "1.1.1.1",
+            "userAgent":
+              {
+                "browser": "CHROME",
+                "os": "Mac OS X",
+                "rawUserAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/99.0.4844.83 Safari/537.36",
+              },
+            "zone": "null",
+          },
+        "p_log_type": "Okta.SystemLog",
+      }

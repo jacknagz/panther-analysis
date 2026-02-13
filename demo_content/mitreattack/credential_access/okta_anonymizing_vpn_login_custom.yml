@@ -1,0 +1,249 @@
+AnalysisType: rule
+Filename: okta_anonymizing_vpn_login_custom.py
+RuleID: "Okta.Anonymizing.VPN.Login.Custom"
+DisplayName: "Okta Sign-In from VPN Anonymizer"
+Enabled: true
+LogTypes:
+  - Okta.SystemLog
+Reports:
+  MITRE ATT&CK:
+    - TA0006:T1556 # Modify Authentication Process
+Tags:
+  - custom
+  - compliance.soc2
+  - mitre.ta0006.credential_access
+  - mitre.t1556.modify_authentication_process
+  - usecase.authentication_monitoring
+  - asset.identity_management
+  - threat.external
+  - impact.confidentiality
+  - risk.medium
+Severity: Medium
+Description: >
+  A user is attempting to sign-in to Okta from a known VPN anonymizer.  The threat actor would access the compromised account using anonymizing proxy services.
+Runbook: |
+  1. Query Okta SystemLog for all sign-in events by the actor (actor.alternateId) in the 24 hours surrounding this alert to identify additional sessions from anonymizing proxies
+  2. Enrich the source IP (client.ipAddress) against threat intelligence feeds and check if it is associated with known VPN or proxy services
+  3. Review the user's recent application access and SSO activity for the 6 hours following this sign-in to assess potential unauthorized access
+Reference: >
+  https://sec.okta.com/articles/2023/08/cross-tenant-impersonation-prevention-and-detection
+DedupPeriodMinutes: 360 # 6 hours
+Threshold: 1
+Tests:
+  - Name: Other Event
+    ExpectedResult: false
+    Log:
+      actor:
+        alternateId: homer.simpson@duff.com
+        displayName: Homer Simpson
+        id: 00abc123
+        type: User
+      authenticationcontext:
+        authenticationStep: 0
+        externalSessionId: 100-abc-9999
+      client:
+        device: Computer
+        geographicalContext:
+          city: Springfield
+          country: United States
+          geolocation:
+            lat: 20
+            lon: -25
+          postalCode: "12345"
+          state: Ohio
+        ipAddress: 1.3.2.4
+        userAgent:
+          browser: CHROME
+          os: Mac OS X
+          rawUserAgent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/102.0.0.0 Safari/537.36
+        zone: "null"
+      debugcontext:
+        debugData:
+          requestId: AbCdEf12G
+          requestUri: /api/v1/users/AbCdEfG/lifecycle/reset_factors
+          url: /api/v1/users/AbCdEfG/lifecycle/reset_factors?
+      displaymessage: Authentication of user via MFA
+      eventtype: user.session.start
+      legacyeventtype: core.user.factor.attempt_fail
+      outcome:
+        reason: INVALID_CREDENTIALS
+        result: FAILURE
+      published: "2022-06-22 18:18:29.015"
+      request:
+        ipChain:
+          - geographicalContext:
+              city: Springfield
+              country: United States
+              geolocation:
+                lat: 20
+                lon: -25
+              postalCode: "12345"
+              state: Ohio
+            ip: 1.3.2.4
+            version: V4
+      securitycontext:
+        asNumber: 701
+        asOrg: verizon
+        domain: verizon.net
+        isProxy: false
+        isp: verizon
+      severity: INFO
+      target:
+        - alternateId: peter.griffin@company.com
+          displayName: Peter Griffin
+          id: 0002222AAAA
+          type: User
+      transaction:
+        detail: {}
+        id: ABcDeFgG
+        type: WEB
+      uuid: AbC-123-XyZ
+      version: "0"
+  - Name: Anonymizing Proxy Used
+    ExpectedResult: true
+    Log:
+      actor:
+        alternateId: homer.simpson@duff.com
+        displayName: Homer Simpson
+        id: 00abc123
+        type: User
+      authenticationcontext:
+        authenticationStep: 0
+        externalSessionId: 100-abc-9999
+      client:
+        device: Computer
+        geographicalContext:
+          city: Springfield
+          country: United States
+          geolocation:
+            lat: 20
+            lon: -25
+          postalCode: "12345"
+          state: Ohio
+        ipAddress: 1.3.2.4
+        userAgent:
+          browser: CHROME
+          os: Mac OS X
+          rawUserAgent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/102.0.0.0 Safari/537.36
+        zone: "null"
+      debugcontext:
+        debugData:
+          requestId: AbCdEf12G
+          requestUri: /api/v1/users/AbCdEfG/lifecycle/reset_factors
+          url: /api/v1/users/AbCdEfG/lifecycle/reset_factors?
+      displaymessage: Authentication of user via MFA
+      eventtype: user.session.start
+      legacyeventtype: core.user.factor.attempt_fail
+      outcome:
+        reason: FastPass declined phishing attempt
+        result: FAILURE
+      published: "2022-06-22 18:18:29.015"
+      request:
+        ipChain:
+          - geographicalContext:
+              city: Springfield
+              country: United States
+              geolocation:
+                lat: 20
+                lon: -25
+              postalCode: "12345"
+              state: Ohio
+            ip: 1.3.2.4
+            version: V4
+      securitycontext:
+        asNumber: 701
+        asOrg: verizon
+        domain: anonymous.org
+        isProxy: true
+        isp: verizon
+      severity: INFO
+      target:
+        - alternateId: peter.griffin@company.com
+          displayName: Peter Griffin
+          id: 0002222AAAA
+          type: User
+      transaction:
+        detail: {}
+        id: ABcDeFgG
+        type: WEB
+      uuid: AbC-123-XyZ
+      version: "0"
+  - Name: Apple Private Relay Used
+    ExpectedResult: true
+    Log:
+      actor:
+        alternateId: homer.simpson@duff.com
+        displayName: Homer Simpson
+        id: 00abc123
+        type: User
+      authenticationcontext:
+        authenticationStep: 0
+        externalSessionId: 100-abc-9999
+      client:
+        device: Computer
+        geographicalContext:
+          city: Springfield
+          country: United States
+          geolocation:
+            lat: 20
+            lon: -25
+          postalCode: "12345"
+          state: Ohio
+        ipAddress: 1.3.2.4
+        userAgent:
+          browser: CHROME
+          os: Mac OS X
+          rawUserAgent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/102.0.0.0 Safari/537.36
+        zone: "null"
+      debugcontext:
+        debugData:
+          requestId: AbCdEf12G
+          requestUri: /api/v1/users/AbCdEfG/lifecycle/reset_factors
+          url: /api/v1/users/AbCdEfG/lifecycle/reset_factors?
+      displaymessage: Authentication of user via MFA
+      eventtype: user.session.start
+      legacyeventtype: core.user.factor.attempt_fail
+      outcome:
+        reason: FastPass declined phishing attempt
+        result: FAILURE
+      p_enrichment:
+        ipinfo_privacy:
+          client.ipAddress:
+            hosting: true
+            p_match: 1.2.3.4
+            proxy: false
+            relay: true
+            service: Apple Private Relay
+            tor: false
+            vpn: false
+      published: "2022-06-22 18:18:29.015"
+      request:
+        ipChain:
+          - geographicalContext:
+              city: Springfield
+              country: United States
+              geolocation:
+                lat: 20
+                lon: -25
+              postalCode: "12345"
+              state: Ohio
+            ip: 1.3.2.4
+            version: V4
+      securitycontext:
+        asNumber: 701
+        asOrg: verizon
+        domain: anonymous.org
+        isProxy: true
+        isp: verizon
+      severity: INFO
+      target:
+        - alternateId: peter.griffin@company.com
+          displayName: Peter Griffin
+          id: 0002222AAAA
+          type: User
+      transaction:
+        detail: {}
+        id: ABcDeFgG
+        type: WEB
+      uuid: AbC-123-XyZ
+      version: "0"
