@@ -7,11 +7,18 @@ DedupPeriodMinutes: 15
 LogTypes:
   - AWS.CloudTrail
 Tags:
-  - AWS
-  - Identity & Access Management
-  - Authentication
-  - DemoThreatHunting
-  - Privilege Escalation:Valid Accounts
+  # Required tags
+  - compliance.soc2
+  - compliance.nist_csf
+  - usecase.privileged_access_monitoring
+  - usecase.authentication_monitoring
+  # Optional tags
+  - mitre.ta0004.privilege_escalation
+  - mitre.t1078.valid_accounts
+  - asset.identity_management
+  - threat.insider
+  - threat.external
+
 Reports:
   CIS:
     - 3.6
@@ -19,8 +26,10 @@ Reports:
     - TA0004:T1078
 Severity: High
 Description: The root account has been logged into.
-Runbook: >
-  Investigate the usage of the root account. If this root activity was not authorized, immediately change the root credentials and investigate what actions the root account took.
+Runbook: |
+  1. Query CloudTrail for all API calls made by the root account in the 6 hours before and after this login event
+  2. Check if the source IP is associated with known administrator locations, VPN endpoints, or threat intelligence feeds
+  3. Search for other root account activity or privilege escalation events in the past 48 hours
 Reference: https://docs.aws.amazon.com/IAM/latest/UserGuide/id_root-user.html
 SummaryAttributes:
   - userAgent

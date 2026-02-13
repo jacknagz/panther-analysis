@@ -6,10 +6,19 @@ Enabled: true
 LogTypes:
   - AWS.CloudTrail
 Tags:
-  - AWS
-  - Security Control
-  - DemoThreatHunting
-  - Defense Evasion:Impair Defenses
+  # Required tags
+  - compliance.soc2
+  - compliance.nist_csf
+  - usecase.siem_integrity
+  - usecase.insider_threat_detection
+  # Optional tags
+  - mitre.ta0005.defense_evasion
+  - mitre.t1562.impair_defenses
+  - asset.logging_infrastructure
+  - asset.detection_controls
+  - threat.insider
+  - impact.availability
+
 Reports:
   CIS:
     - 3.5

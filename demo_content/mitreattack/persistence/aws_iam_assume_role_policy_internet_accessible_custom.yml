@@ -1,0 +1,176 @@
+AnalysisType: rule
+Filename: aws_iam_assume_role_policy_internet_accessible_custom.py
+RuleID: "AWS.IAM.AssumeRolePolicy.InternetAccessible.Custom"
+DisplayName: "IAM Assume Role Policy Updated to Allow Internet Access"
+Enabled: true
+LogTypes:
+  - AWS.CloudTrail
+Tags:
+  - compliance.soc2
+  - compliance.nist_csf
+  - compliance.iso27001
+  - usecase.privileged_access_monitoring
+  - usecase.insider_threat_detection
+  - mitre.ta0003.persistence
+  - mitre.t1098.account_manipulation
+  - asset.identity_management
+  - threat.insider
+  - risk.high
+Reports:
+  CIS:
+    - 1.1
+  MITRE ATT&CK:
+    - TA0007:T1078
+Severity: Medium
+Description: >
+  Detects when an IAM role's assume role policy (trust policy) is updated to allow internet-accessible principals,
+  such as wildcard (*) principals or overly permissive conditions. This could allow any AWS account or identity
+  to assume the role, creating a potential backdoor for unauthorized access.
+Runbook: |
+  1. Identify the IAM role that was modified and review its current assume role policy
+  2. Verify if this change was authorized through change management
+  3. Check what permissions the role has - high-privilege roles are especially concerning
+  4. Review CloudTrail logs for any AssumeRole attempts using this role after the policy change
+  5. If unauthorized, immediately revert the assume role policy to its previous state
+  6. Investigate the actor who made the change for potential compromise
+Reference: https://docs.aws.amazon.com/IAM/latest/UserGuide/access_policies.html
+Tests:
+  - Name: UpdateAssumeRolePolicy with wildcard principal (alert expected)
+    ExpectedResult: true
+    Log:
+      {
+        "eventVersion": "1.05",
+        "userIdentity":
+          {
+            "type": "AssumedRole",
+            "principalId": "tester",
+            "arn": "arn:aws:sts::123456789012:assumed-role/tester",
+            "accountId": "123456789012",
+            "accessKeyId": "1",
+            "sessionContext":
+              {
+                "sessionIssuer":
+                  {
+                    "type": "Role",
+                    "principalId": "1111",
+                    "arn": "arn:aws:iam::123456789012:role/tester",
+                    "accountId": "123456789012",
+                    "userName": "Tester",
+                  },
+                "webIdFederationData": {},
+                "attributes":
+                  {
+                    "mfaAuthenticated": "true",
+                    "creationDate": "2019-01-01T00:00:00Z",
+                  },
+              },
+          },
+        "eventTime": "2019-01-01T00:00:00Z",
+        "eventSource": "iam.amazonaws.com",
+        "eventName": "UpdateAssumeRolePolicy",
+        "awsRegion": "us-west-2",
+        "sourceIPAddress": "111.111.111.111",
+        "userAgent": "console.amazonaws.com",
+        "requestParameters":
+          {
+            "policyDocument": "{\"Version\":\"2012-10-17\",\"Statement\":[{\"Effect\":\"Allow\",\"Principal\":\"*\",\"Action\":\"sts:AssumeRole\",\"Condition\":{\"StringEquals\":{\"sts:ExternalId\":\"12345\"}}}]}"
+          },
+        "responseElements": null,
+        "requestID": "1",
+        "eventID": "1",
+        "readOnly": false,
+        "eventType": "AwsApiCall",
+        "recipientAccountId": "123456789012",
+      }
+  - Name: UpdateAssumeRolePolicy with restricted service principal (no alert)
+    ExpectedResult: false
+    Log:
+      {
+        "eventVersion": "1.05",
+        "userIdentity":
+          {
+            "type": "AssumedRole",
+            "principalId": "tester",
+            "arn": "arn:aws:sts::123456789012:assumed-role/tester",
+            "accountId": "123456789012",
+            "accessKeyId": "1",
+            "sessionContext":
+              {
+                "sessionIssuer":
+                  {
+                    "type": "Role",
+                    "principalId": "1111",
+                    "arn": "arn:aws:iam::123456789012:role/tester",
+                    "accountId": "123456789012",
+                    "userName": "Tester",
+                  },
+                "webIdFederationData": {},
+                "attributes":
+                  {
+                    "mfaAuthenticated": "true",
+                    "creationDate": "2019-01-01T00:00:00Z",
+                  },
+              },
+          },
+        "eventTime": "2019-01-01T00:00:00Z",
+        "eventSource": "iam.amazonaws.com",
+        "eventName": "UpdateAssumeRolePolicy",
+        "awsRegion": "us-west-2",
+        "sourceIPAddress": "111.111.111.111",
+        "userAgent": "console.amazonaws.com",
+        "requestParameters":
+          {
+            "policyDocument": "{\"Version\":\"2012-10-17\",\"Statement\":[{\"Effect\":\"Allow\",\"Principal\":{\"Service\":\"ec2.amazonaws.com\"},\"Action\":\"sts:AssumeRole\"}]}"
+          },
+        "responseElements": null,
+        "requestID": "1",
+        "eventID": "1",
+        "readOnly": false,
+        "eventType": "AwsApiCall",
+        "recipientAccountId": "123456789012",
+      }
+  - Name: UpdateAssumeRolePolicy with no policy document (no alert)
+    ExpectedResult: false
+    Log:
+      {
+        "eventVersion": "1.05",
+        "userIdentity":
+          {
+            "type": "AssumedRole",
+            "principalId": "tester",
+            "arn": "arn:aws:sts::123456789012:assumed-role/tester",
+            "accountId": "123456789012",
+            "accessKeyId": "1",
+            "sessionContext":
+              {
+                "sessionIssuer":
+                  {
+                    "type": "Role",
+                    "principalId": "1111",
+                    "arn": "arn:aws:iam::123456789012:role/tester",
+                    "accountId": "123456789012",
+                    "userName": "Tester",
+                  },
+                "webIdFederationData": { },
+                "attributes":
+                  {
+                    "mfaAuthenticated": "true",
+                    "creationDate": "2019-01-01T00:00:00Z",
+                  },
+              },
+          },
+        "eventTime": "2019-01-01T00:00:00Z",
+        "eventSource": "iam.amazonaws.com",
+        "eventName": "UpdateAssumeRolePolicy",
+        "awsRegion": "us-west-2",
+        "sourceIPAddress": "111.111.111.111",
+        "userAgent": "console.amazonaws.com",
+        "requestParameters":
+          {},
+        "responseElements": null,
+        "requestID": "1",
+        "eventID": "1",
+        "readOnly": false,
+        "eventType": "AwsApiCall",
+        "recipientAccountId": "123456789012",
+      }

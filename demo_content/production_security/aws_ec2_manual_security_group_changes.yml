@@ -9,10 +9,16 @@ Reports:
   MITRE ATT&CK:
     - TA0005:T1562
 Tags:
-  - AWS
-  - Security Control
-  - Configuration Required
-  - Defense Evasion:Impair Defenses
+  # Required tags
+  - compliance.soc2
+  - compliance.nist_csf
+  - usecase.configuration_management
+  - usecase.insider_threat_detection
+  # Optional tags
+  - mitre.ta0005.defense_evasion
+  - threat.insider
+  - impact.confidentiality
+
 Severity: Medium
 Description: >
   An EC2 security group was manually updated without abiding by the organization's accepted processes. This rule expects organizations to either use the Console, CloudFormation, or Terraform, configurable in the rule's ALLOWED_USER_AGENTS.

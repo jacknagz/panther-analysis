@@ -13,20 +13,19 @@ Reports:
   MITRE ATT&CK:
     - TA0007:T1078
 Tags:
-  - demo
-  # Service/Platform tags
-  - aws.iam
-  # Behaviors/Actions tags
-  - auth.role_escalation
-  - resource.permission_change
-  - policy.change
-  # Compliance tags
+  # Required tags
   - compliance.soc2
-  - compliance.pci_dss
   - compliance.iso27001
-  # MITRE tags
-  - privilege_escalation.valid_accounts.default_accounts
-  - persistence.account_manipulation.additional_cloud_credentials
+  - usecase.privileged_access_monitoring
+  - usecase.insider_threat_detection
+  # Optional tags
+  - mitre.ta0003.persistence
+  - mitre.ta0004.privilege_escalation
+  - mitre.t1078.valid_accounts
+  - asset.identity_management
+  - threat.insider
+  - impact.confidentiality
+
 Description: >
   Detects when sensitive IAM policies (such as AdministratorAccess or S3FullAccess) are attached to IAM users. 
   These policies grant extensive permissions that could pose significant security risks if misused or compromised.

@@ -3,6 +3,16 @@ Description: "Identifies disabling of default EBS encryption. Disabling default 
 DisplayName: "AWS EC2 EBS Encryption Disabled"
 Enabled: true
 Filename: aws_ec2_ebs_encryption_disabled.py
+Tags:
+  # Required tags
+  - compliance.soc2
+  - compliance.iso27001
+  - usecase.configuration_management
+  # Optional tags
+  - mitre.ta0005.defense_evasion
+  - asset.identity_management
+  - impact.confidentiality
+
 Reports:
   MITRE ATT&CK:
     - TA0040:T1486

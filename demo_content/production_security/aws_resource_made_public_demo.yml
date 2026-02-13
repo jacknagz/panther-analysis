@@ -6,8 +6,17 @@ Enabled: true
 LogTypes:
   - AWS.CloudTrail
 Tags:
-  - AWS
-  - Exfiltration:Transfer Data to Cloud Account
+  # Required tags
+  - compliance.soc2
+  - compliance.nist_csf
+  - usecase.configuration_management
+  - usecase.insider_threat_detection
+  # Optional tags
+  - mitre.ta0010.exfiltration
+  - mitre.t1537.transfer_data_to_cloud_account
+  - threat.insider
+  - impact.confidentiality
+
 Severity: Medium
 Reports:
   MITRE ATT&CK:

@@ -11,10 +11,9 @@ Threshold: 3
 Description: |
   Detects when a single user or entity performs actions in 3 or more unique AWS regions within a 10 minute window. This may indicate credential compromise or automated attack activity.
 Runbook: |
-  1. Review CloudTrail activity for the user across all regions in the last 10 minutes.
-  2. Confirm if the activity was expected or authorized (e.g., automation, multi-region deployment).
-  3. Investigate for signs of credential compromise or automated attack.
-  4. If suspicious, rotate credentials and review user permissions.
+  1. Query CloudTrail for all API calls by the user ARN across all regions in the 15 minutes before and after this alert to map the full activity scope
+  2. Check if the source IPs match across regions and verify if they're associated with known automation tools, CI/CD systems, or corporate VPN endpoints
+  3. Search for other multi-region activity by this user in the past 30 days to establish baseline behavior patterns
 Reference: https://docs.aws.amazon.com/awscloudtrail/latest/userguide/cloudtrail-event-reference.html
 SummaryAttributes:
   - userIdentity.arn
@@ -23,10 +22,14 @@ SummaryAttributes:
   - sourceIPAddress
   - eventTime
 Tags:
-  - aws
-  - credential-compromise
-  - automation
+  # Required tags
   - compliance.soc2
+  - usecase.insider_threat_detection
+  # Optional tags
+  - mitre.ta0007.discovery
+  - threat.insider
+  - threat.automated
+
 Tests:
   - Name: Activity in three regions (should alert)
     ExpectedResult: true

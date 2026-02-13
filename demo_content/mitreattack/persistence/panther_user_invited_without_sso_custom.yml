@@ -20,7 +20,6 @@ SummaryAttributes:
   - sourceIP
   - timestamp 
 Tags:
-  - custom
   - compliance.soc2
   - compliance.change_management
   - compliance.nist_csf

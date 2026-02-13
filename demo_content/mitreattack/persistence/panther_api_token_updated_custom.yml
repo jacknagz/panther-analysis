@@ -12,11 +12,14 @@ InlineFilters:
     Condition: Equals
     Value: SUCCEEDED
 Tags:
-  - custom
   - compliance.soc2
+  - compliance.change_management
   - usecase.configuration_management
+  - usecase.privileged_access_monitoring
   - asset.api_credentials
-  - risk.medium
+  - mitre.ta0003.persistence
+  - threat.insider
+  - impact.integrity
 Description: >
   Detects when an API token is updated in Panther. This can help monitor changes to API tokens for auditing and security purposes.
 Runbook: |
