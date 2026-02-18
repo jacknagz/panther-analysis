@@ -1,0 +1,65 @@
+AnalysisType: scheduled_rule
+Filename: aws_ec2_instances_created_spike.py
+RuleID: "AWS.CloudTrail.EC2.Instances.Created.Spike"
+DisplayName: "AWS EC2 Instances Created Spike"
+Enabled: false
+ScheduledQueries:
+  - EC2 Instances Created Spike
+Reports:
+  MITRE ATT&CK:
+    - TA0040:T1580  # Discovery: Cloud Infrastructure Discovery
+    - TA0042:T1496  # Impact: Resource Hijacking
+Tags:
+  - AWS
+  - CloudTrail
+  - EC2
+  - Spike Detection
+  - Configuration Required
+Severity: High
+Description: >
+  Detects an abnormally high volume of EC2 instances being created within a short time period.
+  This could indicate:
+  - Unauthorized resource creation for cryptomining or other malicious purposes
+  - Compromised credentials being used to launch instances
+  - Misconfigured automation or runaway scripts
+  - Legitimate but unexpected infrastructure scaling
+
+  The detection uses statistical analysis (3 standard deviations above the 7-day baseline) to identify anomalies.
+Runbook: >
+  1. Verify if the EC2 instance creation was authorized and expected
+  2. Check if this is part of legitimate auto-scaling or deployment activity
+  3. Review the user/role identity that created the instances
+  4. Examine the instance types - unusual types (GPU, large instances) may indicate cryptomining
+  5. Check the source IP addresses for the API calls
+  6. Review CloudTrail logs for other suspicious activity from the same identity
+  7. If unauthorized, terminate the instances and rotate credentials immediately
+  8. Review IAM permissions and consider implementing SCPs to restrict instance types or regions
+Reference: https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-capacity-reservations.html
+Tests:
+  - Name: High Volume Spike Detected
+    ExpectedResult: true
+    Log:
+      recipientAccountId: "123456789012"
+      user_arn: "arn:aws:iam::123456789012:user/suspicious-user"
+      principal_id: "AIDAI23EXAMPLE"
+      recent_instance_count: 50
+      instance_types: ["t2.micro", "t2.small"]
+      source_ips: ["192.0.2.1", "192.0.2.2"]
+      time_slice: "2024-01-15 14:00:00"
+      avg_instances: 5.0
+      stddev_instances: 2.0
+      anomaly_reason: "Spike detected"
+  - Name: High Volume No Baseline
+    ExpectedResult: true
+    Log:
+      recipientAccountId: "123456789012"
+      user_arn: "arn:aws:iam::123456789012:role/new-role"
+      principal_id: "AIDAI23EXAMPLE"
+      recent_instance_count: 15
+      instance_types: ["m5.large"]
+      source_ips: ["198.51.100.1"]
+      time_slice: "2024-01-15 14:00:00"
+      avg_instances: null
+      stddev_instances: null
+      anomaly_reason: "No baseline - high volume"
+DedupPeriodMinutes: 60

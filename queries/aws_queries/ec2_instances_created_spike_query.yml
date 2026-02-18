@@ -1,0 +1,69 @@
+AnalysisType: scheduled_query
+Description: Detects abnormally high volume of EC2 instances created
+Enabled: false
+Query: |
+  WITH baseline AS (
+    -- Calculate the average and standard deviation for EC2 instance creation over the past 7 days
+    SELECT
+      recipientAccountId,
+      userIdentity:arn as user_arn,
+      AVG(instance_count) as avg_instances,
+      STDDEV(instance_count) as stddev_instances
+    FROM (
+      SELECT
+        recipientAccountId,
+        userIdentity:arn,
+        DATE_TRUNC('hour', p_event_time) as hour_bucket,
+        COUNT(*) as instance_count
+      FROM panther_logs.public.aws_cloudtrail
+      WHERE p_occurs_since('7 days')
+        AND eventSource = 'ec2.amazonaws.com'
+        AND eventName = 'RunInstances'
+        AND errorCode IS NULL
+      GROUP BY recipientAccountId, userIdentity:arn, hour_bucket
+    )
+    GROUP BY recipientAccountId, userIdentity:arn
+  ),
+  recent_activity AS (
+    -- Get the most recent hourly activity
+    SELECT
+      recipientAccountId,
+      userIdentity:arn as user_arn,
+      userIdentity:principalId as principal_id,
+      COUNT(*) as recent_instance_count,
+      ARRAY_AGG(DISTINCT requestParameters:instanceType) as instance_types,
+      ARRAY_AGG(DISTINCT sourceIPAddress) as source_ips,
+      TIME_SLICE(p_event_time, 60, 'minute') as time_slice
+    FROM panther_logs.public.aws_cloudtrail
+    WHERE p_occurs_since('1 hour')
+      AND eventSource = 'ec2.amazonaws.com'
+      AND eventName = 'RunInstances'
+      AND errorCode IS NULL
+    GROUP BY recipientAccountId, userIdentity:arn, userIdentity:principalId, time_slice
+  )
+  SELECT
+    r.recipientAccountId,
+    r.user_arn,
+    r.principal_id,
+    r.recent_instance_count,
+    r.instance_types,
+    r.source_ips,
+    r.time_slice,
+    b.avg_instances,
+    b.stddev_instances,
+    -- Alert if recent count is more than 3 standard deviations above the mean, or if there's no baseline and count > 10
+    CASE
+      WHEN b.avg_instances IS NULL AND r.recent_instance_count > 10 THEN 'No baseline - high volume'
+      WHEN b.avg_instances IS NOT NULL AND r.recent_instance_count > (b.avg_instances + (3 * COALESCE(b.stddev_instances, 0))) THEN 'Spike detected'
+      ELSE NULL
+    END as anomaly_reason
+  FROM recent_activity r
+  LEFT JOIN baseline b
+    ON r.recipientAccountId = b.recipientAccountId
+    AND r.user_arn = b.user_arn
+  WHERE anomaly_reason IS NOT NULL
+  ORDER BY r.recent_instance_count DESC
+QueryName: "EC2 Instances Created Spike"
+Schedule:
+  RateMinutes: 60
+  TimeoutMinutes: 5
